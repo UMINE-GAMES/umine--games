@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>UMINE Penalty Kick</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#07130c;
+    color:white;
+    text-align:center;
+    overflow:hidden;
+    touch-action:none;
+}
+
+h1{
+    margin-top:12px;
+    color:#00ff99;
+    font-size:30px;
+}
+
+#stats{
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    margin:9px;
+    font-size:18px;
+}
+
+#game{
+    position:relative;
+    width:min(94vw,430px);
+    height:min(125vw,560px);
+    max-height:70vh;
+    margin:10px auto;
+    overflow:hidden;
+    border:3px solid white;
+    border-radius:15px;
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            #16853b 0px,
+            #16853b 45px,
+            #1a9141 45px,
+            #1a9141 90px
+        );
+}
+
+/* FIELD LINES */
+
+#fieldLine{
+    position:absolute;
+    width:90%;
+    height:180px;
+    left:5%;
+    bottom:35px;
+    border:3px solid rgba(255,255,255,.8);
+    border-bottom:0;
+    border-radius:50% 50% 0 0;
+}
+
+/* GOAL */
+
+#goal{
+    position:absolute;
+    top:48px;
+    left:7%;
+    width:86%;
+    height:185px;
+
+    border:8px solid white;
+    border-bottom:12px solid white;
+
+    background:
+        linear-gradient(
+            45deg,
+            transparent 48%,
+            rgba(255,255,255,.3) 49%,
+            transparent 51%
+        ),
+        linear-gradient(
+            -45deg,
+            transparent 48%,
+            rgba(255,255,255,.3) 49%,
+            transparent 51%
+        );
+}
+
+/* GOALKEEPER */
+
+#keeper{
+    position:absolute;
+    width:65px;
+    height:108px;
+
+    left:50%;
+    top:118px;
+
+    transform:translateX(-50%);
+
+    transition:
+        left .28s ease,
+        transform .28s ease;
+}
+
+.head{
+    width:29px;
+    height:29px;
+
+    background:#ffd0a0;
+
+    border-radius:50%;
+
+    margin:auto;
+
+    position:relative;
+    z-index:2;
+}
+
+.body{
+    width:50px;
+    height:55px;
+
+    background:#1265d8;
+
+    border-radius:10px;
+
+    margin:2px auto;
+}
+
+.arm{
+    position:absolute;
+
+    width:17px;
+    height:60px;
+
+    background:#1265d8;
+
+    top:31px;
+
+    border-radius:10px;
+
+    transition:.28s;
+}
+
+.leftArm{
+    left:-8px;
+    transform:rotate(25deg);
+}
+
+.rightArm{
+    right:-8px;
+    transform:rotate(-25deg);
+}
+
+/* BALL */
+
+#ball{
+    position:absolute;
+
+    width:44px;
+    height:44px;
+
+    border-radius:50%;
+
+    background:white;
+
+    color:#111;
+
+    font-size:24px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    left:50%;
+    bottom:62px;
+
+    transform:translateX(-50%);
+
+    box-shadow:
+        0 4px 10px rgba(0,0,0,.5);
+
+    z-index:5;
+
+    transition:
+        left .48s cubic-bezier(.2,.7,.3,1),
+        top .48s cubic-bezier(.2,.7,.3,1),
+        transform .48s;
+}
+
+/* MESSAGE */
+
+#message{
+    min-height:25px;
+
+    margin:7px;
+
+    font-size:17px;
+
+    font-weight:bold;
+}
+
+/* POWER */
+
+#powerBox{
+    width:250px;
+    height:15px;
+
+    margin:8px auto;
+
+    background:#222;
+
+    border-radius:20px;
+
+    overflow:hidden;
+}
+
+#power{
+    height:100%;
+    width:0%;
+
+    background:#00ff99;
+
+    transition:width .1s;
+}
+
+/* BUTTONS */
+
+#buttons{
+    display:flex;
+    justify-content:center;
+
+    gap:8px;
+
+    margin:8px;
+}
+
+.shot{
+    padding:11px 13px;
+
+    border:0;
+
+    border-radius:10px;
+
+    background:#00ff99;
+
+    color:#07130c;
+
+    font-weight:bold;
+
+    font-size:14px;
+}
+
+.shot:disabled{
+    opacity:.45;
+}
+
+/* RESTART */
+
+#restart{
+    display:none;
+
+    padding:12px 25px;
+
+    border:0;
+
+    border-radius:10px;
+
+    background:#00ff99;
+
+    color:#07130c;
+
+    font-size:18px;
+
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<h1>⚽ Penalty Kick</h1>
+
+<div id="stats">
+
+    <div>
+        ⚽ Goals:
+        <span id="goals">0</span>
+    </div>
+
+    <div>
+        ❌ Misses:
+        <span id="misses">0</span>/3
+    </div>
+
+</div>
+
+
+<div id="game">
+
+    <div id="goal"></div>
+
+    <div id="fieldLine"></div>
+
+    <div id="keeper">
+
+        <div class="head"></div>
+
+        <div class="body"></div>
+
+        <div class="arm leftArm"></div>
+
+        <div class="arm rightArm"></div>
+
+    </div>
+
+    <div id="ball">⚽</div>
+
+</div>
+
+
+<div id="message">
+    Choose where to shoot!
+</div>
+
+
+<div id="powerBox">
+    <div id="power"></div>
+</div>
+
+
+<div id="buttons">
+
+    <button class="shot" onclick="shoot('left')">
+        ⬅️ LEFT
+    </button>
+
+    <button class="shot" onclick="shoot('center')">
+        ⬆️ CENTER
+    </button>
+
+    <button class="shot" onclick="shoot('right')">
+        RIGHT ➡️
+    </button>
+
+</div>
+
+
+<button id="restart" onclick="startGame()">
+    🔄 Restart
+</button>
+
+
+<script>
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const game =
+document.getElementById("game");
+
+const ball =
+document.getElementById("ball");
+
+const keeper =
+document.getElementById("keeper");
+
+const goalsText =
+document.getElementById("goals");
+
+const missesText =
+document.getElementById("misses");
+
+const message =
+document.getElementById("message");
+
+const restart =
+document.getElementById("restart");
+
+const power =
+document.getElementById("power");
+
+const buttons =
+document.querySelectorAll(".shot");
+
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let goals = 0;
+
+let misses = 0;
+
+let playing = true;
+
+let audio;
+
+
+/* =========================
+   SOUND SYSTEM
+========================= */
+
+function initAudio(){
+
+    if(!audio){
+
+        audio =
+        new (window.AudioContext ||
+        window.webkitAudioContext)();
+    }
+
+    if(audio.state === "suspended"){
+
+        audio.resume();
+    }
+}
+
+
+function sound(
+    frequency,
+    duration,
+    type="sine",
+    volume=.12
+){
+
+    initAudio();
+
+    const oscillator =
+    audio.createOscillator();
+
+    const gain =
+    audio.createGain();
+
+    oscillator.type = type;
+
+    oscillator.frequency.value =
+    frequency;
+
+    gain.gain.setValueAtTime(
+        volume,
+        audio.currentTime
+    );
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        audio.currentTime + duration
+    );
+
+    oscillator.connect(gain);
+
+    gain.connect(audio.destination);
+
+    oscillator.start();
+
+    oscillator.stop(
+        audio.currentTime + duration
+    );
+}
+
+
+/* KICK */
+
+function kickSound(){
+
+    sound(
+        180,
+        .12,
+        "triangle",
+        .2
+    );
+
+    setTimeout(()=>{
+
+        sound(
+            100,
+            .08,
+            "square",
+            .08
+        );
+
+    },50);
+}
+
+
+/* GOAL */
+
+function goalSound(){
+
+    sound(
+        523,
+        .18,
+        "sine",
+        .16
+    );
+
+    setTimeout(()=>{
+
+        sound(
+            659,
+            .18,
+            "sine",
+            .16
+        );
+
+    },120);
+
+    setTimeout(()=>{
+
+        sound(
+            784,
+            .35,
+            "sine",
+            .16
+        );
+
+    },240);
+}
+
+
+/* SAVE */
+
+function saveSound(){
+
+    sound(
+        120,
+        .15,
+        "square",
+        .15
+    );
+
+    setTimeout(()=>{
+
+        sound(
+            80,
+            .25,
+            "square",
+            .12
+        );
+
+    },100);
+}
+
+
+/* MISS */
+
+function missSound(){
+
+    sound(
+        300,
+        .15,
+        "sawtooth",
+        .1
+    );
+
+    setTimeout(()=>{
+
+        sound(
+            180,
+            .3,
+            "sawtooth",
+            .1
+        );
+
+    },130);
+}
+
+
+/* GAME OVER */
+
+function gameOverSound(){
+
+    sound(
+        300,
+        .2,
+        "sawtooth",
+        .12
+    );
+
+    setTimeout(()=>{
+
+        sound(
+            220,
+            .25,
+            "sawtooth",
+            .12
+        );
+
+    },180);
+
+    setTimeout(()=>{
+
+        sound(
+            150,
+            .4,
+            "sawtooth",
+            .12
+        );
+
+    },380);
+}
+
+
+/* =========================
+   START GAME
+========================= */
+
+function startGame(){
+
+    goals = 0;
+
+    misses = 0;
+
+    playing = true;
+
+    goalsText.textContent = "0";
+
+    missesText.textContent = "0";
+
+    message.textContent =
+        "Choose where to shoot!";
+
+    restart.style.display =
+        "none";
+
+    buttons.forEach(button=>{
+
+        button.disabled = false;
+
+    });
+
+    resetBall();
+
+    keeper.style.left = "50%";
+
+    keeper.style.transform =
+        "translateX(-50%)";
+
+    power.style.width = "0%";
+}
+
+
+/* =========================
+   RESET BALL
+========================= */
+
+function resetBall(){
+
+    ball.style.transition = "none";
+
+    ball.style.left = "50%";
+
+    ball.style.top = "auto";
+
+    ball.style.bottom = "62px";
+
+    ball.style.transform =
+        "translateX(-50%) scale(1)";
+
+    setTimeout(()=>{
+
+        ball.style.transition =
+        "left .48s cubic-bezier(.2,.7,.3,1),"+
+        "top .48s cubic-bezier(.2,.7,.3,1),"+
+        "transform .48s";
+
+    },30);
+}
+
+
+/* =========================
+   KEEPER REACTION
+========================= */
+
+function keeperReact(direction){
+
+    let keeperPosition;
+
+    if(direction === "left"){
+
+        keeperPosition = "24%";
+
+        keeper.style.transform =
+            "translateX(-50%) rotate(-12deg)";
+
+    }
+
+    else if(direction === "right"){
+
+        keeperPosition = "76%";
+
+        keeper.style.transform =
+            "translateX(-50%) rotate(12deg)";
+
+    }
+
+    else{
+
+        keeperPosition = "50%";
+
+        keeper.style.transform =
+            "translateX(-50%) scale(1.08)";
+
+    }
+
+    keeper.style.left =
+        keeperPosition;
+}
+
+
+/* =========================
+   SHOOT
+========================= */
+
+function shoot(direction){
+
+    if(!playing){
+        return;
+    }
+
+    initAudio();
+
+    playing = false;
+
+    buttons.forEach(button=>{
+
+        button.disabled = true;
+
+    });
+
+
+    kickSound();
+
+
+    /* POWER EFFECT */
+
+    power.style.width =
+        (65 + Math.random()*35) + "%";
+
+
+    /*
+       GOALKEEPER DOESN'T
+       ALWAYS KNOW THE SHOT.
+
+       DIFFICULTY INCREASES
+       WITH GOALS.
+    */
+
+    let saveChance =
+        Math.min(
+            .30 + goals * .035,
+            .55
+        );
+
+
+    /*
+       CORNERS ARE HARDER
+       TO SAVE.
+    */
+
+    if(direction === "center"){
+
+        saveChance += .12;
+
+    }
+
+
+    const saved =
+        Math.random() < saveChance;
+
+
+    keeperReact(direction);
+
+
+    /* TARGET */
+
+    let targetX;
+
+    let targetY;
+
+
+    if(direction === "left"){
+
+        targetX =
+            (15 + Math.random()*12) + "%";
+
+        targetY =
+            (75 + Math.random()*20) + "px";
+
+    }
+
+    else if(direction === "right"){
+
+        targetX =
+            (73 + Math.random()*12) + "%";
+
+        targetY =
+            (75 + Math.random()*20) + "px";
+
+    }
+
+    else{
+
+        targetX =
+            (43 + Math.random()*14) + "%";
+
+        targetY =
+            (80 + Math.random()*25) + "px";
+
+    }
+
+
+    /* BALL FLIES */
+
+    ball.style.left =
+        targetX;
+
+    ball.style.top =
+        targetY;
+
+    ball.style.bottom =
+        "auto";
+
+    ball.style.transform =
+        "translateX(-50%) scale(.55)";
+
+
+    setTimeout(()=>{
+
+        if(saved){
+
+            saveSound();
+
+            misses++;
+
+            missesText.textContent =
+                misses;
+
+            message.textContent =
+                "🧤 WHAT A SAVE!";
+
+        }
+
+        else{
+
+            goalSound();
+
+            goals++;
+
+            goalsText.textContent =
+                goals;
+
+            message.textContent =
+                "⚽ GOOOOOAL! 🔥";
+
+        }
+
+
+        if(misses >= 3){
+
+            setTimeout(
+                endGame,
+                850
+            );
+
+        }
+
+        else{
+
+            setTimeout(()=>{
+
+                resetBall();
+
+                keeper.style.transform =
+                    "translateX(-50%)";
+
+                power.style.width =
+                    "0%";
+
+                playing = true;
+
+                buttons.forEach(button=>{
+
+                    button.disabled =
+                        false;
+
+                });
+
+                message.textContent =
+                    "Next penalty!";
+
+            },900);
+
+        }
+
+    },550);
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function endGame(){
+
+    playing = false;
+
+    gameOverSound();
+
+    message.innerHTML =
+        "🏆 FINAL SCORE: " +
+        goals +
+        " GOALS";
+
+    restart.style.display =
+        "inline-block";
+
+    buttons.forEach(button=>{
+
+        button.disabled = true;
+
+    });
+}
+
+
+/* =========================
+   START
+========================= */
+
+startGame();
+
+</script>
+
+</body>
+  </html>
