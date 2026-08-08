@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>UMINE Snake</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#0b0d12;
+    color:white;
+    overflow:hidden;
+    text-align:center;
+}
+
+h1{
+    margin-top:18px;
+    color:#00ff99;
+}
+
+#score{
+    margin:10px;
+    font-size:22px;
+}
+
+#game{
+    position:relative;
+    width:min(92vw,400px);
+    height:min(92vw,400px);
+    margin:15px auto;
+    background:#151922;
+    border:3px solid #00ff99;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+.snake{
+    position:absolute;
+    width:5%;
+    height:5%;
+    background:#00ff99;
+    border-radius:5px;
+}
+
+.food{
+    position:absolute;
+    width:5%;
+    height:5%;
+    background:#ff4050;
+    border-radius:50%;
+}
+
+#controls{
+    width:220px;
+    margin:15px auto;
+    display:grid;
+    grid-template-columns:70px 70px 70px;
+    gap:8px;
+    justify-content:center;
+}
+
+.control{
+    width:70px;
+    height:60px;
+    border:0;
+    border-radius:12px;
+    background:#202733;
+    color:white;
+    font-size:28px;
+    touch-action:manipulation;
+}
+
+.control:active{
+    background:#00ff99;
+    color:#07100d;
+}
+
+#up{
+    grid-column:2;
+}
+
+#left{
+    grid-column:1;
+    grid-row:2;
+}
+
+#down{
+    grid-column:2;
+    grid-row:2;
+}
+
+#right{
+    grid-column:3;
+    grid-row:2;
+}
+
+#gameOver{
+    display:none;
+    font-size:28px;
+    margin-top:15px;
+}
+
+#restart{
+    margin-top:12px;
+    padding:12px 25px;
+    border:0;
+    border-radius:10px;
+    background:#00ff99;
+    font-size:18px;
+    font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>🐍 UMINE Snake</h1>
+
+<div id="score">
+Score: 0
+</div>
+
+<div id="game"></div>
+
+<div id="controls">
+
+<button class="control" id="up">⬆️</button>
+
+<button class="control" id="left">⬅️</button>
+
+<button class="control" id="down">⬇️</button>
+
+<button class="control" id="right">➡️</button>
+
+</div>
+
+<div id="gameOver">
+
+💀 Game Over
+
+<br>
+
+<button id="restart">
+🔄 Restart
+</button>
+
+</div>
+
+
+<script>
+
+const game =
+document.getElementById("game");
+
+const scoreText =
+document.getElementById("score");
+
+const gameOver =
+document.getElementById("gameOver");
+
+const restart =
+document.getElementById("restart");
+
+
+const grid = 20;
+
+let snake;
+
+let food;
+
+let direction;
+
+let nextDirection;
+
+let score;
+
+let running;
+
+let gameLoop;
+
+
+function startGame(){
+
+snake = [
+    {x:10,y:10},
+    {x:9,y:10},
+    {x:8,y:10}
+];
+
+direction = {
+    x:1,
+    y:0
+};
+
+nextDirection = {
+    x:1,
+    y:0
+};
+
+score = 0;
+
+running = true;
+
+scoreText.textContent =
+"Score: 0";
+
+gameOver.style.display =
+"none";
+
+createFood();
+
+clearInterval(gameLoop);
+
+gameLoop =
+setInterval(update,120);
+
+draw();
+
+}
+
+
+function createFood(){
+
+let valid = false;
+
+while(!valid){
+
+food = {
+    x:Math.floor(Math.random()*grid),
+    y:Math.floor(Math.random()*grid)
+};
+
+valid = !snake.some(part =>
+    part.x === food.x &&
+    part.y === food.y
+);
+
+}
+
+}
+
+
+function draw(){
+
+game.innerHTML = "";
+
+snake.forEach((part,index)=>{
+
+const element =
+document.createElement("div");
+
+element.className =
+"snake";
+
+element.style.left =
+(part.x*5)+"%";
+
+element.style.top =
+(part.y*5)+"%";
+
+if(index === 0){
+
+element.style.background =
+"#ffffff";
+
+}
+
+game.appendChild(element);
+
+});
+
+
+const foodElement =
+document.createElement("div");
+
+foodElement.className =
+"food";
+
+foodElement.style.left =
+(food.x*5)+"%";
+
+foodElement.style.top =
+(food.y*5)+"%";
+
+game.appendChild(foodElement);
+
+}
+
+
+function update(){
+
+if(!running)return;
+
+
+direction =
+nextDirection;
+
+
+const head = {
+    x:snake[0].x + direction.x,
+    y:snake[0].y + direction.y
+};
+
+
+if(
+    head.x < 0 ||
+    head.x >= grid ||
+    head.y < 0 ||
+    head.y >= grid
+){
+
+endGame();
+
+return;
+
+}
+
+
+const eating =
+head.x === food.x &&
+head.y === food.y;
+
+
+if(!eating){
+
+snake.pop();
+
+}
+
+
+if(snake.some(part =>
+    part.x === head.x &&
+    part.y === head.y
+)){
+
+endGame();
+
+return;
+
+}
+
+
+snake.unshift(head);
+
+
+if(eating){
+
+score++;
+
+scoreText.textContent =
+"Score: "+score;
+
+createFood();
+
+}
+
+
+draw();
+
+}
+
+
+function changeDirection(x,y){
+
+if(
+    direction.x === -x &&
+    direction.y === -y
+){
+
+return;
+
+}
+
+nextDirection = {
+    x:x,
+    y:y
+};
+
+}
+
+
+function endGame(){
+
+running = false;
+
+clearInterval(gameLoop);
+
+gameOver.style.display =
+"block";
+
+}
+
+
+document.getElementById("up")
+.addEventListener("pointerdown",()=>{
+    changeDirection(0,-1);
+});
+
+
+document.getElementById("down")
+.addEventListener("pointerdown",()=>{
+    changeDirection(0,1);
+});
+
+
+document.getElementById("left")
+.addEventListener("pointerdown",()=>{
+    changeDirection(-1,0);
+});
+
+
+document.getElementById("right")
+.addEventListener("pointerdown",()=>{
+    changeDirection(1,0);
+});
+
+
+document.addEventListener("keydown",event=>{
+
+if(event.key === "ArrowUp"){
+    changeDirection(0,-1);
+}
+
+if(event.key === "ArrowDown"){
+    changeDirection(0,1);
+}
+
+if(event.key === "ArrowLeft"){
+    changeDirection(-1,0);
+}
+
+if(event.key === "ArrowRight"){
+    changeDirection(1,0);
+}
+
+});
+
+
+restart.addEventListener("click",()=>{
+    startGame();
+});
+
+
+startGame();
+
+</script>
+
+</body>
+</html>
