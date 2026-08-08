@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UMINE Dodge Blocks</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#0b0d12;
+    color:white;
+    text-align:center;
+    overflow:hidden;
+    touch-action:none;
+}
+
+h1{
+    margin-top:15px;
+    color:#00ff99;
+}
+
+#score{
+    margin:8px;
+    font-size:22px;
+}
+
+#game{
+    position:relative;
+    width:min(92vw,400px);
+    height:min(125vw,520px);
+    max-height:65vh;
+    margin:12px auto;
+    background:#151922;
+    border:3px solid #00ff99;
+    border-radius:14px;
+    overflow:hidden;
+}
+
+#player{
+    position:absolute;
+    width:45px;
+    height:45px;
+    bottom:15px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#00ff99;
+    border-radius:10px;
+    box-shadow:0 0 15px #00ff99;
+}
+
+.block{
+    position:absolute;
+    width:42px;
+    height:42px;
+    background:#ff304f;
+    border-radius:8px;
+    box-shadow:0 0 12px #ff304f;
+}
+
+#gameOver{
+    display:none;
+    font-size:28px;
+    margin-top:10px;
+}
+
+#restart{
+    margin-top:12px;
+    padding:12px 25px;
+    border:0;
+    border-radius:10px;
+    background:#00ff99;
+    color:#07100d;
+    font-size:18px;
+    font-weight:bold;
+}
+
+#hint{
+    color:#999;
+    font-size:14px;
+    margin-top:8px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🟥 Dodge Blocks</h1>
+
+<div id="score">Score: 0</div>
+
+<div id="game">
+    <div id="player"></div>
+</div>
+
+<div id="hint">
+    👆 Drag left/right to move
+</div>
+
+<div id="gameOver">
+    💀 Game Over
+    <br>
+    <button id="restart">🔄 Restart</button>
+</div>
+
+<script>
+
+const game = document.getElementById("game");
+const player = document.getElementById("player");
+const scoreText = document.getElementById("score");
+const gameOver = document.getElementById("gameOver");
+const restart = document.getElementById("restart");
+
+let playerX;
+let blocks;
+let score;
+let running;
+let lastTime;
+let spawnTimer;
+let animation;
+
+
+function startGame(){
+
+    document.querySelectorAll(".block").forEach(block=>{
+        block.remove();
+    });
+
+    blocks = [];
+
+    score = 0;
+
+    running = true;
+
+    lastTime = performance.now();
+
+    spawnTimer = 0;
+
+    scoreText.textContent = "Score: 0";
+
+    gameOver.style.display = "none";
+
+    playerX = game.clientWidth / 2;
+
+    player.style.left = playerX + "px";
+
+    cancelAnimationFrame(animation);
+
+    animation = requestAnimationFrame(loop);
+}
+
+
+/* CREATE BLOCK */
+
+function createBlock(){
+
+    const block = document.createElement("div");
+
+    block.className = "block";
+
+    const maxX = game.clientWidth - 42;
+
+    const x = Math.random() * maxX;
+
+    block.style.left = x + "px";
+
+    block.style.top = "-45px";
+
+    game.appendChild(block);
+
+    blocks.push({
+        element:block,
+        x:x,
+        y:-45,
+        speed:170 + Math.random() * 100
+    });
+}
+
+
+/* GAME LOOP */
+
+function loop(time){
+
+    if(!running){
+        return;
+    }
+
+    const delta =
+        Math.min((time-lastTime)/1000,0.05);
+
+    lastTime = time;
+
+    /* SPAWN */
+
+    spawnTimer += delta;
+
+    if(spawnTimer > 0.65){
+
+        createBlock();
+
+        spawnTimer = 0;
+    }
+
+
+    /* MOVE BLOCKS */
+
+    for(let i=blocks.length-1;i>=0;i--){
+
+        const block = blocks[i];
+
+        block.y += block.speed * delta;
+
+        block.element.style.top =
+            block.y + "px";
+
+
+        /* COLLISION */
+
+        const playerLeft =
+            playerX - 22.5;
+
+        const playerRight =
+            playerX + 22.5;
+
+        const playerTop =
+            game.clientHeight - 60;
+
+        const playerBottom =
+            game.clientHeight - 15;
+
+
+        const blockLeft =
+            block.x;
+
+        const blockRight =
+            block.x + 42;
+
+        const blockTop =
+            block.y;
+
+        const blockBottom =
+            block.y + 42;
+
+
+        if(
+            playerLeft < blockRight &&
+            playerRight > blockLeft &&
+            playerTop < blockBottom &&
+            playerBottom > blockTop
+        ){
+
+            endGame();
+
+            return;
+        }
+
+
+        /* REMOVE OLD BLOCK */
+
+        if(block.y > game.clientHeight){
+
+            block.element.remove();
+
+            blocks.splice(i,1);
+
+            score++;
+
+            scoreText.textContent =
+                "Score: " + score;
+        }
+    }
+
+
+    animation =
+        requestAnimationFrame(loop);
+}
+
+
+/* MOVE PLAYER */
+
+function movePlayer(x){
+
+    if(!running){
+        return;
+    }
+
+    const half = 22.5;
+
+    const minX = half;
+
+    const maxX =
+        game.clientWidth - half;
+
+    playerX =
+        Math.max(minX,Math.min(maxX,x));
+
+    player.style.left =
+        playerX + "px";
+}
+
+
+/* TOUCH CONTROL */
+
+let dragging = false;
+
+game.addEventListener("pointerdown",function(e){
+
+    dragging = true;
+
+    movePlayer(
+        e.clientX -
+        game.getBoundingClientRect().left
+    );
+});
+
+
+game.addEventListener("pointermove",function(e){
+
+    if(!dragging){
+        return;
+    }
+
+    movePlayer(
+        e.clientX -
+        game.getBoundingClientRect().left
+    );
+});
+
+
+game.addEventListener("pointerup",function(){
+
+    dragging = false;
+});
+
+
+game.addEventListener("pointercancel",function(){
+
+    dragging = false;
+});
+
+
+/* KEYBOARD */
+
+document.addEventListener("keydown",function(e){
+
+    if(!running){
+        return;
+    }
+
+    if(e.key === "ArrowLeft"){
+
+        movePlayer(playerX - 35);
+    }
+
+    if(e.key === "ArrowRight"){
+
+        movePlayer(playerX + 35);
+    }
+});
+
+
+/* GAME OVER */
+
+function endGame(){
+
+    running = false;
+
+    cancelAnimationFrame(animation);
+
+    gameOver.style.display = "block";
+}
+
+
+/* RESTART */
+
+restart.addEventListener("pointerdown",function(e){
+
+    e.preventDefault();
+
+    startGame();
+});
+
+
+/* START */
+
+startGame();
+
+</script>
+
+</body>
+  </html>
