@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0,user-scalable=no">
+
+<title>Breakout</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+background:#090b18;
+touch-action:none;
+font-family:monospace;
+user-select:none;
+}
+
+#game{
+position:fixed;
+inset:0;
+overflow:hidden;
+background:linear-gradient(#11162d,#070914);
+}
+
+canvas{
+position:absolute;
+left:0;
+top:0;
+width:100%;
+height:100%;
+}
+
+#hud{
+position:fixed;
+top:12px;
+left:15px;
+right:15px;
+
+display:flex;
+justify-content:space-between;
+
+color:white;
+font-size:18px;
+font-weight:bold;
+
+text-shadow:2px 2px #000;
+z-index:10;
+}
+
+#message{
+position:fixed;
+inset:0;
+
+display:flex;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+
+background:rgba(0,0,0,.72);
+
+color:white;
+
+z-index:20;
+
+text-align:center;
+padding:25px;
+}
+
+#message h1{
+font-size:38px;
+margin-bottom:18px;
+}
+
+#message p{
+font-size:17px;
+line-height:25px;
+margin-bottom:22px;
+max-width:330px;
+}
+
+button{
+padding:13px 28px;
+
+font-family:monospace;
+font-size:18px;
+font-weight:bold;
+
+border:3px solid white;
+border-radius:8px;
+
+background:#00d9ff;
+color:#061018;
+}
+
+#hint{
+position:fixed;
+
+bottom:12px;
+left:0;
+right:0;
+
+text-align:center;
+
+color:rgba(255,255,255,.7);
+
+font-size:13px;
+
+z-index:10;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<canvas id="canvas"></canvas>
+
+<div id="hud">
+
+<div>
+SCORE: <span id="score">0</span>
+</div>
+
+<div>
+❤️ <span id="lives">3</span>
+</div>
+
+</div>
+
+<div id="hint">
+MOVE THE PADDLE WITH YOUR FINGER
+</div>
+
+<div id="message">
+
+<h1>BREAKOUT</h1>
+
+<p>
+BREAK THE BLOCKS AND DON'T MAKE THE BALL FALL ON GROUND
+</p>
+
+<button id="start">
+PLAY
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+/* =========================
+   CANVAS
+========================= */
+
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+let W;
+let H;
+
+function resize(){
+
+W = canvas.width =
+window.innerWidth;
+
+H = canvas.height =
+window.innerHeight;
+
+paddle.y = H - 70;
+
+}
+
+window.addEventListener(
+"resize",
+resize
+);
+
+
+/* =========================
+   SOUND
+========================= */
+
+let audio = null;
+
+function startAudio(){
+
+if(!audio){
+
+audio =
+new(
+window.AudioContext ||
+window.webkitAudioContext
+)();
+
+}
+
+if(audio.state === "suspended"){
+
+audio.resume();
+
+}
+
+}
+
+
+function sound(
+frequency,
+duration,
+type="square",
+volume=.08
+){
+
+if(!audio)return;
+
+const osc =
+audio.createOscillator();
+
+const gain =
+audio.createGain();
+
+osc.type = type;
+
+osc.frequency.value =
+frequency;
+
+gain.gain.setValueAtTime(
+volume,
+audio.currentTime
+);
+
+gain.gain.exponentialRampToValueAtTime(
+0.001,
+audio.currentTime + duration
+);
+
+osc.connect(gain);
+
+gain.connect(audio.destination);
+
+osc.start();
+
+osc.stop(
+audio.currentTime + duration
+);
+
+}
+
+
+/* =========================
+   GAME
+========================= */
+
+let score = 0;
+
+let lives = 3;
+
+let running = false;
+
+let gameOver = false;
+
+
+/* =========================
+   PADDLE
+========================= */
+
+const paddle = {
+
+width:110,
+
+height:14,
+
+x:0,
+
+y:0
+
+};
+
+
+/* =========================
+   BALL
+========================= */
+
+const ball = {
+
+x:0,
+
+y:0,
+
+radius:8,
+
+dx:4,
+
+dy:-4
+
+};
+
+
+/* =========================
+   BLOCKS
+========================= */
+
+let blocks = [];
+
+const rows = 5;
+
+const cols = 7;
+
+const blockWidth = 45;
+
+const blockHeight = 18;
+
+const gap = 7;
+
+
+function createBlocks(){
+
+blocks = [];
+
+const totalWidth =
+cols * blockWidth +
+(cols - 1) * gap;
+
+const startX =
+(W - totalWidth) / 2;
+
+for(let r=0;r<rows;r++){
+
+for(let c=0;c<cols;c++){
+
+blocks.push({
+
+x:
+startX +
+c * (blockWidth + gap),
+
+y:
+80 +
+r * (blockHeight + gap),
+
+width:blockWidth,
+
+height:blockHeight,
+
+alive:true
+
+});
+
+}
+
+}
+
+}
+
+
+/* =========================
+   BALL RESET
+========================= */
+
+function resetBall(){
+
+ball.x = W / 2;
+
+ball.y = H - 100;
+
+ball.dx =
+Math.random() < .5
+? -4
+: 4;
+
+ball.dy = -4;
+
+}
+
+
+/* =========================
+   RESET GAME
+========================= */
+
+function resetGame(){
+
+score = 0;
+
+lives = 3;
+
+gameOver = false;
+
+running = true;
+
+document.getElementById(
+"score"
+).textContent = score;
+
+document.getElementById(
+"lives"
+).textContent = lives;
+
+paddle.x =
+W / 2 -
+paddle.width / 2;
+
+paddle.y =
+H - 70;
+
+createBlocks();
+
+resetBall();
+
+}
+
+
+/* =========================
+   BACKGROUND
+========================= */
+
+function drawBackground(){
+
+ctx.fillStyle = "#090b18";
+
+ctx.fillRect(
+0,
+0,
+W,
+H
+);
+
+for(let i=0;i<40;i++){
+
+const x =
+(i * 83) % W;
+
+const y =
+(i * 47) % H;
+
+ctx.fillStyle =
+"rgba(255,255,255,.18)";
+
+ctx.fillRect(
+x,
+y,
+2,
+2
+);
+
+}
+
+}
+
+
+/* =========================
+   PADDLE
+========================= */
+
+function drawPaddle(){
+
+ctx.fillStyle =
+"#00d9ff";
+
+ctx.fillRect(
+
+paddle.x,
+
+paddle.y,
+
+paddle.width,
+
+paddle.height
+
+);
+
+ctx.fillStyle =
+"#ffffff";
+
+ctx.fillRect(
+
+paddle.x + 10,
+
+paddle.y + 3,
+
+paddle.width - 20,
+
+3
+
+);
+
+}
+
+
+/* =========================
+   BALL
+========================= */
+
+function drawBall(){
+
+ctx.beginPath();
+
+ctx.arc(
+
+ball.x,
+
+ball.y,
+
+ball.radius,
+
+0,
+
+Math.PI * 2
+
+);
+
+ctx.fillStyle =
+"#ffffff";
+
+ctx.fill();
+
+ctx.closePath();
+
+}
+
+
+/* =========================
+   BLOCKS
+========================= */
+
+function drawBlocks(){
+
+const colors = [
+
+"#ff3b5c",
+
+"#ff8c42",
+
+"#ffd23f",
+
+"#42e6a4",
+
+"#39a0ff"
+
+];
+
+for(let i=0;i<blocks.length;i++){
+
+const b = blocks[i];
+
+if(!b.alive)continue;
+
+ctx.fillStyle =
+colors[i % colors.length];
+
+ctx.fillRect(
+
+b.x,
+
+b.y,
+
+b.width,
+
+b.height
+
+);
+
+ctx.strokeStyle =
+"rgba(255,255,255,.5)";
+
+ctx.strokeRect(
+
+b.x,
+
+b.y,
+
+b.width,
+
+b.height
+
+);
+
+}
+
+}
+
+
+/* =========================
+   BLOCK COLLISION
+========================= */
+
+function blockCollision(){
+
+for(const b of blocks){
+
+if(!b.alive)continue;
+
+if(
+
+ball.x + ball.radius > b.x &&
+
+ball.x - ball.radius <
+b.x + b.width &&
+
+ball.y + ball.radius > b.y &&
+
+ball.y - ball.radius <
+b.y + b.height
+
+){
+
+b.alive = false;
+
+ball.dy *= -1;
+
+score += 10;
+
+document.getElementById(
+"score"
+).textContent = score;
+
+sound(
+520,
+.07,
+"square",
+.08
+);
+
+if(
+blocks.every(
+block => !block.alive
+)
+){
+
+winGame();
+
+}
+
+break;
+
+}
+
+}
+
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update(){
+
+if(!running)return;
+
+
+/* BALL */
+
+ball.x += ball.dx;
+
+ball.y += ball.dy;
+
+
+/* LEFT / RIGHT WALL */
+
+if(
+
+ball.x - ball.radius <= 0 ||
+
+ball.x + ball.radius >= W
+
+){
+
+ball.dx *= -1;
+
+sound(
+260,
+.04,
+"square",
+.04
+);
+
+}
+
+
+/* TOP WALL */
+
+if(
+ball.y - ball.radius <= 0
+){
+
+ball.dy *= -1;
+
+sound(
+260,
+.04,
+"square",
+.04
+);
+
+}
+
+
+/* PADDLE */
+
+if(
+
+ball.y + ball.radius >= paddle.y &&
+
+ball.y - ball.radius <=
+paddle.y + paddle.height &&
+
+ball.x >= paddle.x &&
+
+ball.x <=
+paddle.x + paddle.width &&
+
+ball.dy > 0
+
+){
+
+ball.dy =
+-Math.abs(ball.dy);
+
+const hit =
+(
+ball.x -
+(paddle.x + paddle.width / 2)
+) /
+(paddle.width / 2);
+
+ball.dx = hit * 6;
+
+sound(
+400,
+.05,
+"square",
+.07
+);
+
+}
+
+
+/* BALL FALL */
+
+if(
+ball.y - ball.radius > H
+){
+
+lives--;
+
+document.getElementById(
+"lives"
+).textContent = lives;
+
+sound(
+120,
+.25,
+"sawtooth",
+.12
+);
+
+if(lives <= 0){
+
+endGame();
+
+}else{
+
+resetBall();
+
+}
+
+}
+
+
+/* BLOCKS */
+
+blockCollision();
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function draw(){
+
+drawBackground();
+
+drawBlocks();
+
+drawPaddle();
+
+drawBall();
+
+}
+
+
+/* =========================
+   LOOP
+========================= */
+
+function loop(){
+
+draw();
+
+update();
+
+requestAnimationFrame(loop);
+
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function endGame(){
+
+running = false;
+
+gameOver = true;
+
+const message =
+document.getElementById("message");
+
+message.style.display =
+"flex";
+
+message.innerHTML = `
+
+<h1>GAME OVER</h1>
+
+<p>
+Score: ${score}
+</p>
+
+<button id="restart">
+RESTART
+</button>
+
+`;
+
+sound(
+120,
+.3,
+"sawtooth",
+.12
+);
+
+document
+.getElementById("restart")
+.addEventListener(
+"pointerdown",
+function(){
+
+startAudio();
+
+message.style.display =
+"none";
+
+resetGame();
+
+});
+
+}
+
+
+/* =========================
+   WIN
+========================= */
+
+function winGame(){
+
+running = false;
+
+gameOver = true;
+
+sound(
+700,
+.15,
+"square",
+.12
+);
+
+setTimeout(
+function(){
+
+sound(
+900,
+.2,
+"square",
+.12
+);
+
+},
+150
+);
+
+const message =
+document.getElementById("message");
+
+message.style.display =
+"flex";
+
+message.innerHTML = `
+
+<h1>🏆 YOU WIN!</h1>
+
+<p>
+Score: ${score}
+</p>
+
+<button id="restart">
+PLAY AGAIN
+</button>
+
+`;
+
+document
+.getElementById("restart")
+.addEventListener(
+"pointerdown",
+function(){
+
+startAudio();
+
+message.style.display =
+"none";
+
+resetGame();
+
+});
+
+}
+
+
+/* =========================
+   PADDLE CONTROL
+========================= */
+
+function movePaddle(clientX){
+
+paddle.x =
+clientX -
+paddle.width / 2;
+
+if(paddle.x < 0){
+
+paddle.x = 0;
+
+}
+
+if(
+paddle.x + paddle.width > W
+){
+
+paddle.x =
+W - paddle.width;
+
+}
+
+}
+
+
+canvas.addEventListener(
+"pointermove",
+function(e){
+
+if(!running)return;
+
+movePaddle(e.clientX);
+
+});
+
+
+canvas.addEventListener(
+"pointerdown",
+function(e){
+
+if(!running)return;
+
+movePaddle(e.clientX);
+
+});
+
+
+/* =========================
+   START BUTTON
+========================= */
+
+document
+.getElementById("start")
+.addEventListener(
+"pointerdown",
+function(){
+
+startAudio();
+
+document
+.getElementById("message")
+.style.display =
+"none";
+
+resetGame();
+
+});
+
+
+/* =========================
+   INIT
+========================= */
+
+resize();
+
+createBlocks();
+
+paddle.x =
+W / 2 -
+paddle.width / 2;
+
+paddle.y =
+H - 70;
+
+resetBall();
+
+draw();
+
+loop();
+
+</script>
+
+</body>
+  </html>
