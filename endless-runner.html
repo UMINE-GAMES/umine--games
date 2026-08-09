@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Endless Runner 3D</title>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  touch-action:none;
+  font-family:Arial,sans-serif;
+  background:#76cfff;
+}
+
+#game{
+  position:fixed;
+  inset:0;
+}
+
+canvas{
+  display:block;
+}
+
+#hud{
+  position:fixed;
+  top:12px;
+  left:12px;
+  right:12px;
+  display:flex;
+  justify-content:space-between;
+  color:white;
+  font:bold 18px Arial;
+  text-shadow:2px 2px 4px #000;
+  z-index:10;
+}
+
+#power{
+  position:fixed;
+  top:43px;
+  left:12px;
+  color:white;
+  font:bold 14px Arial;
+  text-shadow:2px 2px 4px #000;
+  z-index:10;
+}
+
+#hint{
+  position:fixed;
+  bottom:14px;
+  left:0;
+  right:0;
+  text-align:center;
+  color:white;
+  font:bold 13px Arial;
+  text-shadow:2px 2px 4px #000;
+  z-index:10;
+}
+
+#message{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.72);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  color:white;
+  z-index:30;
+  padding:25px;
+}
+
+#message h1{
+  font-size:40px;
+  margin-bottom:15px;
+}
+
+#message p{
+  max-width:330px;
+  line-height:24px;
+  margin-bottom:22px;
+}
+
+button{
+  border:3px solid white;
+  border-radius:10px;
+  padding:13px 32px;
+  font-size:19px;
+  font-weight:bold;
+  background:#00d9ff;
+  color:#061018;
+}
+</style>
+</head>
+
+<body>
+
+<div id="game"></div>
+
+<div id="hud">
+  <div>SCORE: <span id="score">0</span></div>
+  <div>🪙 <span id="coins">0</span></div>
+  <div>❤️ <span id="lives">3</span></div>
+</div>
+
+<div id="power"></div>
+
+<div id="hint">
+SWIPE LEFT / RIGHT TO MOVE • SWIPE UP TO JUMP • SWIPE DOWN TO SLIDE
+</div>
+
+<div id="message">
+  <h1>ENDLESS RUNNER 3D</h1>
+
+  <p>
+    RUN AS FAR AS YOU CAN AND DON'T HIT THE OBSTACLES
+  </p>
+
+  <button id="play">PLAY</button>
+</div>
+
+
+<script type="module">
+
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js";
+
+
+/* =========================
+   BASIC SETUP
+========================= */
+
+const game =
+document.getElementById("game");
+
+const scene =
+new THREE.Scene();
+
+scene.background =
+new THREE.Color(0x72cfff);
+
+scene.fog =
+new THREE.Fog(0x72cfff,35,150);
+
+
+const camera =
+new THREE.PerspectiveCamera(
+60,
+innerWidth/innerHeight,
+0.1,
+300
+);
+
+camera.position.set(
+0,
+5,
+9
+);
+
+
+const renderer =
+new THREE.WebGLRenderer({
+antialias:true
+});
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+renderer.setPixelRatio(
+Math.min(devicePixelRatio,1.5)
+);
+
+renderer.shadowMap.enabled=true;
+
+game.appendChild(
+renderer.domElement
+);
+
+
+/* =========================
+   LIGHT
+========================= */
+
+const hemi =
+new THREE.HemisphereLight(
+0xffffff,
+0x557755,
+1.5
+);
+
+scene.add(hemi);
+
+
+const sun =
+new THREE.DirectionalLight(
+0xffffff,
+1.5
+);
+
+sun.position.set(
+-20,
+30,
+10
+);
+
+sun.castShadow=true;
+
+scene.add(sun);
+
+
+/* =========================
+   WORLD
+========================= */
+
+const roadMat =
+new THREE.MeshStandardMaterial({
+color:0x303030
+});
+
+const grassMat =
+new THREE.MeshStandardMaterial({
+color:0x36a84a
+});
+
+
+/* Ground */
+
+const ground =
+new THREE.Mesh(
+new THREE.PlaneGeometry(
+200,
+1000
+),
+grassMat
+);
+
+ground.rotation.x=
+-Math.PI/2;
+
+ground.position.y=-0.05;
+
+scene.add(ground);
+
+
+/* Road */
+
+const road =
+new THREE.Mesh(
+new THREE.PlaneGeometry(
+10,
+1000
+),
+roadMat
+);
+
+road.rotation.x=
+-Math.PI/2;
+
+scene.add(road);
+
+
+/* Lane lines */
+
+const lineMat =
+new THREE.MeshBasicMaterial({
+color:0xffffff
+});
+
+for(let x of [-1.67,1.67]){
+
+const line =
+new THREE.Mesh(
+new THREE.BoxGeometry(
+0.08,
+0.02,
+1000
+),
+lineMat
+);
+
+line.position.set(
+x,
+0.02,
+0
+);
+
+scene.add(line);
+
+}
+
+
+/* =========================
+   PLAYER
+========================= */
+
+const player =
+new THREE.Group();
+
+player.position.set(
+0,
+0,
+3
+);
+
+scene.add(player);
+
+
+/* Body */
+
+const body =
+new THREE.Mesh(
+new THREE.BoxGeometry(
+0.8,
+1.25,
+0.5
+),
+new THREE.MeshStandardMaterial({
+color:0x1684ff
+})
+);
+
+body.position.y=1.0;
+
+body.castShadow=true;
+
+player.add(body);
+
+
+/* Head */
+
+const head =
+new THREE.Mesh(
+new THREE.SphereGeometry(
+0.42,
+16,
+16
+),
+new THREE.MeshStandardMaterial({
+color:0xffc18d
+})
+);
+
+head.position.y=1.9;
+
+head.castShadow=true;
+
+player.add(head);
+
+
+/* Hair */
+
+const hair =
+new THREE.Mesh(
+new THREE.BoxGeometry(
+0.72,
+0.25,
+0.65
+),
+new THREE.MeshStandardMaterial({
+color:0x171717
+})
+);
+
+hair.position.y=2.22;
+
+player.add(hair);
+
+
+/* Legs */
+
+const legMat =
+new THREE.MeshStandardMaterial({
+color:0x222222
+});
+
+const leftLeg =
+new THREE.Mesh(
+new THREE.BoxGeometry(
+0.25,
+0.85,
+0.3
+),
+legMat
+);
+
+const rightLeg =
+leftLeg.clone();
+
+leftLeg.position.set(
+-0.22,
+0.38,
+0
+);
+
+rightLeg.position.set(
+0.22,
+0.38,
+0
+);
+
+player.add(leftLeg);
+player.add(rightLeg);
+
+
+/* Arms */
+
+const armMat =
+new THREE.MeshStandardMaterial({
+color:0xffc18d
+});
+
+const leftArm =
+new THREE.Mesh(
+new THREE.BoxGeometry(
+0.22,
+0.8,
+0.22
+),
+armMat
+);
+
+const rightArm =
+leftArm.clone();
+
+leftArm.position.set(
+-0.58,
+1.05,
+0
+);
+
+rightArm.position.set(
+0.58,
+1.05,
+0
+);
+
+player.add(leftArm);
+player.add(rightArm);
+
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let running=false;
+
+let lane=0;
+
+const laneWidth=3.0;
+
+let targetX=0;
+
+let velocityY=0;
+
+let jumping=false;
+
+let sliding=false;
+
+let slideTime=0;
+
+let score=0;
+
+let coins=0;
+
+let lives=3;
+
+let speed=0.18;
+
+let shield=false;
+
+let magnet=false;
+
+let speedBoost=false;
+
+let powerEnd=0;
+
+let magnetEnd=0;
+
+let spawnTimer=0;
+
+let coinTimer=0;
+
+let powerTimer=0;
+
+let objects=[];
+
+let touchStartX=0;
+
+let touchStartY=0;
+
+
+/* =========================
+   MATERIALS
+========================= */
+
+const obstacleMat =
+new THREE.MeshStandardMaterial({
+color:0xe63232
+});
+
+const highMat =
+new THREE.MeshStandardMaterial({
+color:0x7b38dc
+});
+
+const coinMat =
+new THREE.MeshStandardMaterial({
+color:0xffd21f,
+metalness:.7,
+roughness:.25
+});
+
+
+/* =========================
+   OBSTACLE
+========================= */
+
+function createObstacle(){
+
+const high =
+Math.random()<0.3;
+
+const mesh =
+new THREE.Mesh(
+new THREE.BoxGeometry(
+high?1.9:1.5,
+high?0.7:1.7,
+1.2
+),
+high?highMat:obstacleMat
+);
+
+const randomLane =
+Math.floor(
+Math.random()*3
+)-1;
+
+mesh.position.x =
+randomLane*laneWidth;
+
+mesh.position.z =
+-80;
+
+mesh.position.y =
+high?2.25:0.85;
+
+mesh.castShadow=true;
+
+scene.add(mesh);
+
+objects.push({
+mesh:mesh,
+type:high?"high":"normal",
+lane:randomLane
+});
+
+}
+
+
+/* =========================
+   COIN
+========================= */
+
+function createCoin(){
+
+const coin =
+new THREE.Mesh(
+new THREE.TorusGeometry(
+0.28,
+0.09,
+10,
+20
+),
+coinMat
+);
+
+const randomLane =
+Math.floor(
+Math.random()*3
+)-1;
+
+coin.position.x =
+randomLane*laneWidth;
+
+coin.position.y =
+0.85+
+Math.random()*0.7;
+
+coin.position.z =
+-80;
+
+coin.rotation.y=
+Math.PI/2;
+
+scene.add(coin);
+
+objects.push({
+mesh:coin,
+type:"coin"
+});
+
+}
+
+
+/* =========================
+   POWER UP
+========================= */
+
+function createPower(){
+
+const types=[
+"shield",
+"speed",
+"magnet",
+"life"
+];
+
+const type=
+types[
+Math.floor(
+Math.random()*types.length
+)
+];
+
+const colors={
+shield:0x36a8ff,
+speed:0xff4d22,
+magnet:0xff33cc,
+life:0xff3333
+};
+
+const mesh =
+new THREE.Mesh(
+new THREE.IcosahedronGeometry(
+0.5,
+1
+),
+new THREE.MeshStandardMaterial({
+color:colors[type],
+emissive:colors[type],
+emissiveIntensity:.35
+})
+);
+
+const randomLane =
+Math.floor(
+Math.random()*3
+)-1;
+
+mesh.position.set(
+randomLane*laneWidth,
+1,
+-80
+);
+
+scene.add(mesh);
+
+objects.push({
+mesh:mesh,
+type:"power",
+powerType:type
+});
+
+}
+
+
+/* =========================
+   POWER COLLECT
+========================= */
+
+function collectPower(type){
+
+if(type==="shield"){
+
+shield=true;
+
+document.getElementById(
+"power"
+).textContent=
+"SHIELD ACTIVE";
+
+}
+
+if(type==="speed"){
+
+speedBoost=true;
+
+powerEnd=
+performance.now()+5000;
+
+document.getElementById(
+"power"
+).textContent=
+"SPEED BOOST";
+
+}
+
+if(type==="magnet"){
+
+magnet=true;
+
+magnetEnd=
+performance.now()+7000;
+
+document.getElementById(
+"power"
+).textContent=
+"COIN MAGNET";
+
+}
+
+if(type==="life"){
+
+lives++;
+
+document.getElementById(
+"lives"
+).textContent=
+lives;
+
+document.getElementById(
+"power"
+).textContent=
+"EXTRA LIFE +1";
+
+}
+
+beep(700,.12);
+
+}
+
+
+/* =========================
+   SIMPLE SOUND
+========================= */
+
+let audio=null;
+
+function audioStart(){
+
+if(!audio){
+
+audio=new(
+window.AudioContext ||
+window.webkitAudioContext
+)();
+
+}
+
+if(audio.state==="suspended")
+audio.resume();
+
+}
+
+function beep(
+frequency,
+duration
+){
+
+if(!audio)return;
+
+const o=
+audio.createOscillator();
+
+const g=
+audio.createGain();
+
+o.frequency.value=
+frequency;
+
+o.type="square";
+
+g.gain.value=.07;
+
+o.connect(g);
+
+g.connect(audio.destination);
+
+o.start();
+
+o.stop(
+audio.currentTime+
+duration
+);
+
+}
+
+
+/* =========================
+   JUMP
+========================= */
+
+function jump(){
+
+if(!running)return;
+
+if(jumping)return;
+
+if(sliding)return;
+
+jumping=true;
+
+velocityY=.25;
+
+beep(500,.08);
+
+}
+
+
+/* =========================
+   SLIDE
+========================= */
+
+function startSlide(){
+
+if(!running)return;
+
+if(jumping)return;
+
+sliding=true;
+
+slideTime=.55;
+
+player.scale.y=.58;
+
+}
+
+
+/* =========================
+   LANE
+========================= */
+
+function moveLane(direction){
+
+if(!running)return;
+
+lane+=direction;
+
+lane=
+Math.max(
+-1,
+Math.min(1,lane)
+);
+
+targetX=
+lane*laneWidth;
+
+}
+
+
+/* =========================
+   COLLISION
+========================= */
+
+function hitTest(obj){
+
+const px=
+player.position.x;
+
+const pz=
+player.position.z;
+
+const ox=
+obj.mesh.position.x;
+
+const oz=
+obj.mesh.position.z;
+
+if(
+Math.abs(px-ox)<1.25 &&
+Math.abs(pz-oz)<1.4
+){
+
+return true;
+
+}
+
+return false;
+
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function gameOver(){
+
+running=false;
+
+document.getElementById(
+"message"
+).style.display="flex";
+
+document.getElementById(
+"message"
+).innerHTML=`
+
+<h1>GAME OVER</h1>
+
+<p>
+SCORE: ${Math.floor(score)}<br>
+COINS: ${coins}
+</p>
+
+<button id="restart">
+RESTART
+</button>
+
+`;
+
+document
+.getElementById("restart")
+.addEventListener(
+"pointerdown",
+e=>{
+
+e.stopPropagation();
+
+document.getElementById(
+"message"
+).style.display="none";
+
+resetGame();
+
+});
+
+}
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetGame(){
+
+for(const obj of objects){
+
+scene.remove(
+obj.mesh
+);
+
+}
+
+objects=[];
+
+score=0;
+
+coins=0;
+
+lives=3;
+
+lane=0;
+
+targetX=0;
+
+player.position.x=0;
+
+player.position.y=0;
+
+player.position.z=3;
+
+velocityY=0;
+
+jumping=false;
+
+sliding=false;
+
+player.scale.y=1;
+
+speed=.18;
+
+shield=false;
+
+magnet=false;
+
+speedBoost=false;
+
+spawnTimer=1;
+
+coinTimer=.5;
+
+powerTimer=5;
+
+document.getElementById(
+"score"
+).textContent="0";
+
+document.getElementById(
+"coins"
+).textContent="0";
+
+document.getElementById(
+"lives"
+).textContent="3";
+
+document.getElementById(
+"power"
+).textContent="";
+
+running=true;
+
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update(dt){
+
+if(!running)return;
+
+
+/* SCORE */
+
+score+=dt*10;
+
+document.getElementById(
+"score"
+).textContent=
+Math.floor(score);
+
+
+/* SPEED */
+
+speed=
+.18+
+Math.floor(score)/4000;
+
+if(speedBoost){
+
+if(
+performance.now()<
+powerEnd
+){
+
+speed*=1.65;
+
+}else{
+
+speedBoost=false;
+
+document.getElementById(
+"power"
+).textContent="";
+
+}
+
+}
+
+if(magnet){
+
+if(
+performance.now()>=magnetEnd
+){
+
+magnet=false;
+
+document.getElementById(
+"power"
+).textContent="";
+
+}
+
+}
+
+
+/* PLAYER LANE */
+
+player.position.x+=
+(
+targetX-
+player.position.x
+)*.15;
+
+
+/* JUMP */
+
+if(jumping){
+
+velocityY-=dt*.8;
+
+player.position.y+=
+velocityY;
+
+if(player.position.y<=0){
+
+player.position.y=0;
+
+velocityY=0;
+
+jumping=false;
+
+}
+
+}
+
+
+/* SLIDE */
+
+if(sliding){
+
+slideTime-=dt;
+
+if(slideTime<=0){
+
+sliding=false;
+
+player.scale.y=1;
+
+}
+
+}
+
+
+/* ANIMATION */
+
+const runTime=
+performance.now()*.012;
+
+leftLeg.rotation.x=
+Math.sin(runTime)*.7;
+
+rightLeg.rotation.x=
+-Math.sin(runTime)*.7;
+
+leftArm.rotation.x=
+-Math.sin(runTime)*.5;
+
+rightArm.rotation.x=
+Math.sin(runTime)*.5;
+
+
+/* SPAWN OBSTACLES */
+
+spawnTimer-=dt;
+
+if(spawnTimer<=0){
+
+createObstacle();
+
+spawnTimer=
+Math.max(
+.65,
+1.15-
+score/1500
+);
+
+}
+
+
+/* COINS */
+
+coinTimer-=dt;
+
+if(coinTimer<=0){
+
+createCoin();
+
+coinTimer=.35;
+
+}
+
+
+/* POWER */
+
+powerTimer-=dt;
+
+if(powerTimer<=0){
+
+createPower();
+
+powerTimer=
+7+
+Math.random()*6;
+
+}
+
+
+/* MOVE WORLD OBJECTS */
+
+for(
+let i=objects.length-1;
+i>=0;
+i--
+){
+
+const obj=
+objects[i];
+
+obj.mesh.position.z+=
+speed*dt*60;
+
+
+/* Coin magnet */
+
+if(
+obj.type==="coin" &&
+magnet
+){
+
+const dx=
+player.position.x-
+obj.mesh.position.x;
+
+obj.mesh.position.x+=
+dx*.08;
+
+}
+
+
+/* Rotation */
+
+if(
+obj.type==="coin" ||
+obj.type==="power"
+){
+
+obj.mesh.rotation.y+=
+dt*5;
+
+}
+
+
+/* Collision */
+
+if(
+hitTest(obj)
+){
+
+if(obj.type==="coin"){
+
+coins++;
+
+document.getElementById(
+"coins"
+).textContent=
+coins;
+
+beep(900,.06);
+
+scene.remove(
+obj.mesh
+);
+
+objects.splice(i,1);
+
+continue;
+
+}
+
+
+if(obj.type==="power"){
+
+collectPower(
+obj.powerType
+);
+
+scene.remove(
+obj.mesh
+);
+
+objects.splice(i,1);
+
+continue;
+
+}
+
+
+/*
+   HIGH obstacle:
+   must slide.
+*/
+
+if(obj.type==="high"){
+
+if(
+sliding
+){
+
+scene.remove(
+obj.mesh
+);
+
+objects.splice(i,1);
+
+continue;
+
+}
+
+}
+
+
+/*
+   Normal obstacle:
+   jumping over it works.
+*/
+
+if(obj.type==="normal"){
+
+const highEnough=
+player.position.y>.9;
+
+if(highEnough){
+
+scene.remove(
+obj.mesh
+);
+
+objects.splice(i,1);
+
+continue;
+
+}
+
+}
+
+
+/* Shield */
+
+if(shield){
+
+shield=false;
+
+document.getElementById(
+"power"
+).textContent="";
+
+scene.remove(
+obj.mesh
+);
+
+objects.splice(i,1);
+
+continue;
+
+}
+
+
+/* Lose life */
+
+lives--;
+
+document.getElementById(
+"lives"
+).textContent=
+lives;
+
+beep(120,.25);
+
+scene.remove(
+obj.mesh
+);
+
+objects.splice(i,1);
+
+if(lives<=0){
+
+gameOver();
+
+return;
+
+}
+
+continue;
+
+}
+
+
+/* Remove behind player */
+
+if(
+obj.mesh.position.z>15
+){
+
+scene.remove(
+obj.mesh
+);
+
+objects.splice(i,1);
+
+}
+
+}
+
+
+/* CAMERA */
+
+camera.position.x+=
+(
+player.position.x-
+camera.position.x
+)*.08;
+
+camera.position.y=
+4.6+
+player.position.y*.25;
+
+camera.position.z=9;
+
+camera.lookAt(
+player.position.x,
+1.1+
+player.position.y*.25,
+-12
+);
+
+}
+
+
+/* =========================
+   TOUCH CONTROLS
+========================= */
+
+renderer.domElement.addEventListener(
+"pointerdown",
+e=>{
+
+if(!running)return;
+
+touchStartX=e.clientX;
+
+touchStartY=e.clientY;
+
+},
+{passive:true}
+);
+
+
+renderer.domElement.addEventListener(
+"pointerup",
+e=>{
+
+if(!running)return;
+
+const dx=
+e.clientX-touchStartX;
+
+const dy=
+e.clientY-touchStartY;
+
+
+/* Horizontal */
+
+if(
+Math.abs(dx)>
+Math.abs(dy) &&
+Math.abs(dx)>45
+){
+
+if(dx>0)
+moveLane(1);
+else
+moveLane(-1);
+
+return;
+
+}
+
+
+/* Vertical */
+
+if(
+Math.abs(dy)>45
+){
+
+if(dy<0){
+
+/* Swipe UP */
+
+jump();
+
+}else{
+
+/* Swipe DOWN */
+
+startSlide();
+
+}
+
+return;
+
+}
+
+},
+{passive:true}
+);
+
+
+/* =========================
+   PLAY BUTTON
+========================= */
+
+document.getElementById(
+"play"
+).addEventListener(
+"pointerdown",
+e=>{
+
+e.stopPropagation();
+
+audioStart();
+
+document.getElementById(
+"message"
+).style.display="none";
+
+resetGame();
+
+});
+
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener(
+"resize",
+()=>{
+
+camera.aspect=
+innerWidth/innerHeight;
+
+camera.updateProjectionMatrix();
+
+renderer.setSize(
+innerWidth,
+innerHeight
+);
+
+});
+
+
+/* =========================
+   LOOP
+========================= */
+
+let previous=
+performance.now();
+
+function animate(now){
+
+const dt=
+Math.min(
+(now-previous)/1000,
+.033
+);
+
+previous=now;
+
+update(dt);
+
+renderer.render(
+scene,
+camera
+);
+
+requestAnimationFrame(
+animate
+);
+
+}
+
+requestAnimationFrame(
+animate
+);
+
+</script>
+
+</body>
+  </html>
