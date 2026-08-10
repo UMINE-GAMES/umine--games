@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+
+<title>Asteroid Escape</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+touch-action:none;
+font-family:Arial,sans-serif;
+background:#020617;
+}
+
+#game{
+position:fixed;
+inset:0;
+overflow:hidden;
+
+background:
+radial-gradient(circle at center,#111827,#020617 70%);
+}
+
+/* STARS */
+
+.star{
+position:absolute;
+width:2px;
+height:2px;
+background:white;
+border-radius:50%;
+opacity:.8;
+}
+
+/* HUD */
+
+#hud{
+position:fixed;
+
+top:12px;
+left:15px;
+right:15px;
+
+display:flex;
+justify-content:space-between;
+
+color:white;
+
+font-size:20px;
+font-weight:bold;
+
+z-index:50;
+
+text-shadow:2px 2px 4px black;
+}
+
+/* SCORE */
+
+#score{
+position:fixed;
+
+top:52px;
+
+width:100%;
+
+text-align:center;
+
+color:white;
+
+font-size:40px;
+font-weight:bold;
+
+z-index:50;
+
+text-shadow:3px 3px 5px black;
+}
+
+/* SHIP */
+
+#ship{
+position:absolute;
+
+width:48px;
+height:58px;
+
+font-size:48px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+z-index:20;
+
+filter:
+drop-shadow(0 0 8px #38bdf8);
+
+}
+
+/* ASTEROID */
+
+.asteroid{
+position:absolute;
+
+width:65px;
+height:65px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:58px;
+
+z-index:15;
+
+pointer-events:none;
+}
+
+/* CONTROLS */
+
+#controls{
+position:fixed;
+
+bottom:15px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+width:210px;
+height:130px;
+
+z-index:80;
+}
+
+.control{
+position:absolute;
+
+width:65px;
+height:55px;
+
+border-radius:12px;
+
+border:3px solid #64748b;
+
+background:rgba(30,41,59,.85);
+
+color:white;
+
+font-size:25px;
+
+font-weight:bold;
+
+touch-action:none;
+}
+
+.control:active{
+background:#475569;
+}
+
+#left{
+left:0;
+top:55px;
+}
+
+#right{
+right:0;
+top:55px;
+}
+
+#up{
+left:72px;
+top:0;
+}
+
+#down{
+left:72px;
+top:55px;
+}
+
+/* MENU */
+
+#menu{
+position:fixed;
+
+inset:0;
+
+z-index:100;
+
+display:flex;
+
+flex-direction:column;
+
+justify-content:center;
+
+align-items:center;
+
+text-align:center;
+
+color:white;
+
+background:rgba(0,0,0,.82);
+}
+
+#menu h1{
+font-size:42px;
+
+margin-bottom:15px;
+
+text-shadow:
+3px 3px 5px black;
+}
+
+#menu p{
+font-size:18px;
+
+line-height:29px;
+
+margin-bottom:25px;
+}
+
+button{
+padding:14px 35px;
+
+border:3px solid white;
+
+border-radius:12px;
+
+background:#2563eb;
+
+color:white;
+
+font-size:19px;
+
+font-weight:bold;
+
+touch-action:manipulation;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<!-- HUD -->
+
+<div id="hud">
+
+<span>
+BEST: <b id="best">0</b>
+</span>
+
+<span>
+🚀 <b id="speed">1</b>
+</span>
+
+</div>
+
+<div id="score">
+0
+</div>
+
+
+<!-- SHIP -->
+
+<div id="ship">
+🚀
+</div>
+
+
+<!-- CONTROLS -->
+
+<div id="controls">
+
+<button
+class="control"
+id="up">
+▲
+</button>
+
+<button
+class="control"
+id="left">
+◀
+</button>
+
+<button
+class="control"
+id="down">
+▼
+</button>
+
+<button
+class="control"
+id="right">
+▶
+</button>
+
+</div>
+
+
+<!-- MENU -->
+
+<div id="menu">
+
+<h1>🚀 ASTEROID ESCAPE</h1>
+
+<p>
+Move your spaceship<br>
+Avoid the asteroids ☄️<br>
+Survive as long as possible!
+</p>
+
+<button id="start">
+START
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const game=
+document.getElementById("game");
+
+const ship=
+document.getElementById("ship");
+
+const scoreText=
+document.getElementById("score");
+
+const bestText=
+document.getElementById("best");
+
+const speedText=
+document.getElementById("speed");
+
+const menu=
+document.getElementById("menu");
+
+const startButton=
+document.getElementById("start");
+
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let playing=false;
+
+let score=0;
+
+let best=
+Number(
+localStorage.getItem(
+"asteroidBest"
+)||0
+);
+
+let speed=3;
+
+let asteroids=[];
+
+let spawnTimer;
+
+let animation;
+
+
+/* =========================
+   PLAYER
+========================= */
+
+let player={
+
+x:innerWidth/2,
+
+y:innerHeight-140,
+
+speed:7
+
+};
+
+
+let moveX=0;
+let moveY=0;
+
+
+bestText.textContent=best;
+
+
+/* =========================
+   STARS
+========================= */
+
+function createStars(){
+
+for(
+let i=0;
+i<80;
+i++
+){
+
+let star=
+document.createElement("div");
+
+star.className="star";
+
+star.style.left=
+Math.random()*100+"%";
+
+star.style.top=
+Math.random()*100+"%";
+
+star.style.opacity=
+Math.random();
+
+game.appendChild(star);
+
+}
+
+}
+
+createStars();
+
+
+/* =========================
+   START GAME
+========================= */
+
+function startGame(e){
+
+if(e){
+
+e.preventDefault();
+e.stopPropagation();
+
+}
+
+
+asteroids.forEach(
+a=>a.el.remove()
+);
+
+asteroids=[];
+
+
+score=0;
+
+speed=3;
+
+
+scoreText.textContent="0";
+
+speedText.textContent="1";
+
+
+player.x=
+innerWidth/2;
+
+player.y=
+innerHeight-140;
+
+
+ship.style.left=
+player.x+"px";
+
+ship.style.top=
+player.y+"px";
+
+
+playing=true;
+
+menu.style.display="none";
+
+
+clearInterval(spawnTimer);
+
+cancelAnimationFrame(animation);
+
+
+/* Spawn */
+
+spawnTimer=
+setInterval(
+spawnAsteroid,
+600
+);
+
+
+animation=
+requestAnimationFrame(update);
+
+}
+
+
+/* =========================
+   SPAWN ASTEROID
+========================= */
+
+function spawnAsteroid(){
+
+if(!playing)
+return;
+
+
+let el=
+document.createElement("div");
+
+el.className="asteroid";
+
+el.textContent=
+"☄️";
+
+
+let size=
+50+
+Math.random()*30;
+
+
+let x=
+Math.random()*
+(innerWidth-size);
+
+
+let y=
+-80;
+
+
+let vx=
+(Math.random()-.5)*
+2.5;
+
+
+let vy=
+speed+
+Math.random()*2;
+
+
+el.style.left=
+x+"px";
+
+el.style.top=
+y+"px";
+
+el.style.fontSize=
+size+"px";
+
+
+game.appendChild(el);
+
+
+asteroids.push({
+
+el:el,
+
+x:x,
+
+y:y,
+
+vx:vx,
+
+vy:vy,
+
+size:size
+
+});
+
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update(){
+
+if(!playing)
+return;
+
+
+/* PLAYER */
+
+player.x+=
+moveX*player.speed;
+
+player.y+=
+moveY*player.speed;
+
+
+/* LIMIT */
+
+player.x=
+Math.max(
+10,
+Math.min(
+innerWidth-55,
+player.x
+)
+);
+
+player.y=
+Math.max(
+70,
+Math.min(
+innerHeight-110,
+player.y
+)
+);
+
+
+ship.style.left=
+player.x+"px";
+
+ship.style.top=
+player.y+"px";
+
+
+/* ASTEROIDS */
+
+for(
+let i=asteroids.length-1;
+i>=0;
+i--
+){
+
+let a=
+asteroids[i];
+
+
+a.x+=a.vx;
+
+a.y+=a.vy;
+
+
+a.el.style.left=
+a.x+"px";
+
+a.el.style.top=
+a.y+"px";
+
+
+/* COLLISION */
+
+let dx=
+(player.x+24)-
+(a.x+a.size/2);
+
+let dy=
+(player.y+29)-
+(a.y+a.size/2);
+
+
+let distance=
+Math.sqrt(
+dx*dx+
+dy*dy
+);
+
+
+if(
+distance<
+(a.size/2)+20
+){
+
+gameOver();
+
+return;
+
+}
+
+
+/* REMOVE */
+
+if(
+a.y>
+innerHeight+100
+){
+
+a.el.remove();
+
+asteroids.splice(i,1);
+
+score++;
+
+scoreText.textContent=
+score;
+
+
+/* SPEED */
+
+if(
+score%10===0
+){
+
+speed+=.6;
+
+speedText.textContent=
+Math.floor(
+speed-2
+)+1;
+
+}
+
+}
+
+}
+
+
+animation=
+requestAnimationFrame(update);
+
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function gameOver(){
+
+playing=false;
+
+clearInterval(spawnTimer);
+
+cancelAnimationFrame(animation);
+
+
+if(score>best){
+
+best=score;
+
+bestText.textContent=
+best;
+
+localStorage.setItem(
+"asteroidBest",
+best
+);
+
+}
+
+
+menu.style.display="flex";
+
+
+menu.innerHTML=`
+
+<h1>GAME OVER 💥</h1>
+
+<p>
+Score: ${score}<br>
+Best: ${best}
+</p>
+
+<button id="restart">
+PLAY AGAIN
+</button>
+
+`;
+
+
+document
+.getElementById("restart")
+.addEventListener(
+"pointerdown",
+startGame
+);
+
+}
+
+
+/* =========================
+   CONTROLS
+========================= */
+
+function control(
+id,
+x,
+y
+){
+
+document
+.getElementById(id)
+.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+moveX=x;
+moveY=y;
+
+}
+);
+
+
+document
+.getElementById(id)
+.addEventListener(
+"pointerup",
+function(e){
+
+e.preventDefault();
+
+moveX=0;
+moveY=0;
+
+}
+);
+
+
+document
+.getElementById(id)
+.addEventListener(
+"pointercancel",
+function(){
+
+moveX=0;
+moveY=0;
+
+}
+);
+
+}
+
+
+/* =========================
+   CONTROL SETUP
+========================= */
+
+control(
+"left",
+-1,
+0
+);
+
+control(
+"right",
+1,
+0
+);
+
+control(
+"up",
+0,
+-1
+);
+
+control(
+"down",
+0,
+1
+);
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener(
+"keydown",
+function(e){
+
+if(e.key==="ArrowLeft")
+moveX=-1;
+
+if(e.key==="ArrowRight")
+moveX=1;
+
+if(e.key==="ArrowUp")
+moveY=-1;
+
+if(e.key==="ArrowDown")
+moveY=1;
+
+}
+);
+
+
+document.addEventListener(
+"keyup",
+function(e){
+
+if(
+e.key==="ArrowLeft" ||
+e.key==="ArrowRight"
+){
+
+moveX=0;
+
+}
+
+if(
+e.key==="ArrowUp" ||
+e.key==="ArrowDown"
+){
+
+moveY=0;
+
+}
+
+}
+);
+
+
+/* =========================
+   START BUTTON
+========================= */
+
+startButton.addEventListener(
+"pointerdown",
+startGame
+);
+
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener(
+"resize",
+function(){
+
+if(!playing){
+
+player.x=
+innerWidth/2;
+
+player.y=
+innerHeight-140;
+
+}
+
+}
+);
+
+</script>
+
+</body>
+  </html>
