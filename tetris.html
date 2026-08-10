@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Tetris</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+touch-action:none;
+font-family:Arial,sans-serif;
+background:#111827;
+}
+
+#game{
+min-height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding-top:15px;
+}
+
+h1{
+color:white;
+font-size:38px;
+margin-bottom:8px;
+}
+
+#hud{
+width:300px;
+display:flex;
+justify-content:space-between;
+color:white;
+font-size:18px;
+font-weight:bold;
+margin-bottom:8px;
+}
+
+#board{
+width:300px;
+height:600px;
+
+display:grid;
+
+grid-template-columns:repeat(10,30px);
+grid-template-rows:repeat(20,30px);
+
+background:#020617;
+
+border:4px solid #475569;
+}
+
+.cell{
+width:30px;
+height:30px;
+border:1px solid #172033;
+}
+
+.filled{
+border:2px solid rgba(255,255,255,.35);
+}
+
+.cyan{background:#22d3ee;}
+.blue{background:#3b82f6;}
+.orange{background:#f97316;}
+.yellow{background:#facc15;}
+.green{background:#22c55e;}
+.purple{background:#a855f7;}
+.red{background:#ef4444;}
+
+#controls{
+margin-top:12px;
+
+width:320px;
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.control{
+width:65px;
+height:52px;
+
+border:2px solid white;
+border-radius:10px;
+
+background:#334155;
+
+color:white;
+
+font-size:24px;
+font-weight:bold;
+
+touch-action:none;
+}
+
+.control:active{
+background:#64748b;
+}
+
+#rotate{
+background:#7c3aed;
+}
+
+#menu{
+position:fixed;
+inset:0;
+
+z-index:100;
+
+background:rgba(0,0,0,.85);
+
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+
+color:white;
+text-align:center;
+}
+
+#menu h2{
+font-size:45px;
+margin-bottom:15px;
+}
+
+#menu p{
+font-size:18px;
+line-height:30px;
+margin-bottom:25px;
+}
+
+button{
+font-family:Arial;
+}
+
+#start{
+padding:14px 35px;
+
+border:3px solid white;
+border-radius:12px;
+
+background:#2563eb;
+
+color:white;
+
+font-size:20px;
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>🟨 TETRIS</h1>
+
+<div id="hud">
+
+<span>
+SCORE: <b id="score">0</b>
+</span>
+
+<span>
+LINES: <b id="lines">0</b>
+</span>
+
+</div>
+
+<div id="board"></div>
+
+<div id="controls">
+
+<button class="control" id="left">◀</button>
+
+<button class="control" id="rotate">↻</button>
+
+<button class="control" id="down">▼</button>
+
+<button class="control" id="right">▶</button>
+
+</div>
+
+</div>
+
+
+<div id="menu">
+
+<h2>TETRIS</h2>
+
+<p>
+Move the blocks<br>
+Complete lines to score!
+</p>
+
+<button id="start">
+START
+</button>
+
+</div>
+
+
+<script>
+
+/* =========================
+   BOARD
+========================= */
+
+const ROWS=20;
+const COLS=10;
+
+const boardElement=
+document.getElementById("board");
+
+const scoreText=
+document.getElementById("score");
+
+const linesText=
+document.getElementById("lines");
+
+const menu=
+document.getElementById("menu");
+
+const startButton=
+document.getElementById("start");
+
+
+let board=[];
+let current=null;
+
+let score=0;
+let lines=0;
+
+let playing=false;
+
+let dropTimer;
+
+
+/* =========================
+   PIECES
+========================= */
+
+const pieces=[
+
+{
+shape:[
+[1,1,1,1]
+],
+color:"cyan"
+},
+
+{
+shape:[
+[1,0,0],
+[1,1,1]
+],
+color:"blue"
+},
+
+{
+shape:[
+[0,0,1],
+[1,1,1]
+],
+color:"orange"
+},
+
+{
+shape:[
+[1,1],
+[1,1]
+],
+color:"yellow"
+},
+
+{
+shape:[
+[0,1,1],
+[1,1,0]
+],
+color:"green"
+},
+
+{
+shape:[
+[0,1,0],
+[1,1,1]
+],
+color:"purple"
+},
+
+{
+shape:[
+[1,1,0],
+[0,1,1]
+],
+color:"red"
+}
+
+];
+
+
+/* =========================
+   START
+========================= */
+
+function startGame(){
+
+clearInterval(dropTimer);
+
+board=[];
+
+for(let r=0;r<ROWS;r++){
+
+board[r]=[];
+
+for(let c=0;c<COLS;c++){
+
+board[r][c]=null;
+
+}
+
+}
+
+score=0;
+lines=0;
+
+scoreText.textContent="0";
+linesText.textContent="0";
+
+playing=true;
+
+menu.style.display="none";
+
+spawnPiece();
+
+dropTimer=
+setInterval(
+drop,
+550
+);
+
+draw();
+
+}
+
+
+/* =========================
+   SPAWN
+========================= */
+
+function spawnPiece(){
+
+let data=
+pieces[
+Math.floor(
+Math.random()*pieces.length
+)
+];
+
+current={
+
+shape:data.shape.map(
+row=>[...row]
+),
+
+color:data.color,
+
+x:Math.floor(
+COLS/2-
+data.shape[0].length/2
+),
+
+y:0
+
+};
+
+
+if(collision()){
+
+gameOver();
+
+}
+
+}
+
+
+/* =========================
+   COLLISION
+========================= */
+
+function collision(){
+
+for(
+let r=0;
+r<current.shape.length;
+r++
+){
+
+for(
+let c=0;
+c<current.shape[r].length;
+c++
+){
+
+if(!current.shape[r][c])
+continue;
+
+let x=
+current.x+c;
+
+let y=
+current.y+r;
+
+
+if(
+x<0 ||
+x>=COLS ||
+y>=ROWS
+){
+
+return true;
+
+}
+
+if(
+y>=0 &&
+board[y][x]
+){
+
+return true;
+
+}
+
+}
+
+}
+
+return false;
+
+}
+
+
+/* =========================
+   MERGE
+========================= */
+
+function merge(){
+
+for(
+let r=0;
+r<current.shape.length;
+r++
+){
+
+for(
+let c=0;
+c<current.shape[r].length;
+c++
+){
+
+if(
+current.shape[r][c]
+){
+
+let x=
+current.x+c;
+
+let y=
+current.y+r;
+
+if(
+y>=0
+){
+
+board[y][x]=
+current.color;
+
+}
+
+}
+
+}
+
+}
+
+}
+
+
+/* =========================
+   CLEAR LINES
+========================= */
+
+function clearLines(){
+
+let cleared=0;
+
+for(let r=ROWS-1;r>=0;r--){
+
+if(
+board[r].every(
+cell=>cell!==null
+)
+){
+
+board.splice(r,1);
+
+board.unshift(
+new Array(COLS).fill(null)
+);
+
+cleared++;
+
+r++;
+
+}
+
+}
+
+if(cleared>0){
+
+lines+=cleared;
+
+score+=
+cleared===1 ? 100 :
+cleared===2 ? 300 :
+cleared===3 ? 500 :
+800;
+
+linesText.textContent=
+lines;
+
+scoreText.textContent=
+score;
+
+}
+
+}
+
+
+/* =========================
+   DROP
+========================= */
+
+function drop(){
+
+if(!playing)
+return;
+
+current.y++;
+
+if(collision()){
+
+current.y--;
+
+merge();
+
+clearLines();
+
+spawnPiece();
+
+}
+
+draw();
+
+}
+
+
+/* =========================
+   MOVE
+========================= */
+
+function move(dx){
+
+if(!playing)
+return;
+
+current.x+=dx;
+
+if(collision()){
+
+current.x-=dx;
+
+}
+
+draw();
+
+}
+
+
+/* =========================
+   ROTATE
+========================= */
+
+function rotate(){
+
+if(!playing)
+return;
+
+const old=
+current.shape;
+
+const rows=
+old.length;
+
+const cols=
+old[0].length;
+
+let rotated=[];
+
+for(let c=0;c<cols;c++){
+
+rotated[c]=[];
+
+for(let r=rows-1;r>=0;r--){
+
+rotated[c].push(
+old[r][c]
+);
+
+}
+
+}
+
+current.shape=rotated;
+
+if(collision()){
+
+current.shape=old;
+
+}
+
+draw();
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function draw(){
+
+boardElement.innerHTML="";
+
+
+for(let r=0;r<ROWS;r++){
+
+for(let c=0;c<COLS;c++){
+
+let cell=
+document.createElement("div");
+
+cell.className="cell";
+
+
+if(board[r][c]){
+
+cell.classList.add(
+"filled",
+board[r][c]
+);
+
+}
+
+
+boardElement.appendChild(cell);
+
+}
+
+}
+
+
+/* CURRENT */
+
+if(!current)
+return;
+
+for(
+let r=0;
+r<current.shape.length;
+r++
+){
+
+for(
+let c=0;
+c<current.shape[r].length;
+c++
+){
+
+if(
+!current.shape[r][c]
+)
+continue;
+
+let x=
+current.x+c;
+
+let y=
+current.y+r;
+
+if(
+x>=0 &&
+x<COLS &&
+y>=0 &&
+y<ROWS
+){
+
+let index=
+y*COLS+x;
+
+let cell=
+boardElement.children[index];
+
+cell.classList.add(
+"filled",
+current.color
+);
+
+}
+
+}
+
+}
+
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function gameOver(){
+
+playing=false;
+
+clearInterval(dropTimer);
+
+menu.style.display="flex";
+
+menu.innerHTML=`
+
+<h2>GAME OVER 💥</h2>
+
+<p>
+Score: ${score}<br>
+Lines: ${lines}
+</p>
+
+<button id="restart">
+PLAY AGAIN
+</button>
+
+`;
+
+document
+.getElementById("restart")
+.addEventListener(
+"pointerdown",
+startGame
+);
+
+}
+
+
+/* =========================
+   CONTROLS
+========================= */
+
+document
+.getElementById("left")
+.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+move(-1);
+
+}
+);
+
+
+document
+.getElementById("right")
+.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+move(1);
+
+}
+);
+
+
+document
+.getElementById("down")
+.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+drop();
+
+}
+);
+
+
+document
+.getElementById("rotate")
+.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+rotate();
+
+}
+);
+
+
+/* =========================
+   KEYBOARD
+========================= */
+
+document.addEventListener(
+"keydown",
+function(e){
+
+if(e.key==="ArrowLeft")
+move(-1);
+
+if(e.key==="ArrowRight")
+move(1);
+
+if(e.key==="ArrowDown")
+drop();
+
+if(
+e.key==="ArrowUp" ||
+e.key===" "
+){
+
+rotate();
+
+}
+
+}
+);
+
+
+/* =========================
+   START BUTTON
+========================= */
+
+startButton.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+startGame();
+
+}
+);
+
+
+/* =========================
+   START
+========================= */
+
+startGame();
+
+</script>
+
+</body>
+  </html>
