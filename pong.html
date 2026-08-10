@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0,user-scalable=no">
+
+<title>Pong</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+touch-action:none;
+font-family:Arial,sans-serif;
+background:#050505;
+}
+
+#game{
+position:fixed;
+inset:0;
+background:#080808;
+overflow:hidden;
+}
+
+/* SCORE */
+
+#score{
+
+position:fixed;
+
+top:20px;
+
+left:0;
+
+width:100%;
+
+text-align:center;
+
+color:white;
+
+font-size:42px;
+
+font-weight:bold;
+
+z-index:20;
+
+text-shadow:3px 3px 5px black;
+
+}
+
+/* CENTER LINE */
+
+#line{
+
+position:absolute;
+
+left:50%;
+
+top:0;
+
+width:4px;
+
+height:100%;
+
+transform:translateX(-50%);
+
+background:
+repeating-linear-gradient(
+to bottom,
+white 0px,
+white 18px,
+transparent 18px,
+transparent 36px
+);
+
+opacity:.35;
+
+}
+
+/* PADDLES */
+
+.paddle{
+
+position:absolute;
+
+width:16px;
+
+height:100px;
+
+background:white;
+
+border-radius:8px;
+
+box-shadow:
+0 0 10px white;
+
+}
+
+/* PLAYER */
+
+#player{
+
+left:15px;
+
+top:50%;
+
+transform:translateY(-50%);
+
+}
+
+/* AI */
+
+#ai{
+
+right:15px;
+
+top:50%;
+
+transform:translateY(-50%);
+
+}
+
+/* BALL */
+
+#ball{
+
+position:absolute;
+
+width:20px;
+
+height:20px;
+
+background:white;
+
+border-radius:50%;
+
+box-shadow:
+0 0 15px white;
+
+}
+
+/* START MENU */
+
+#menu{
+
+position:fixed;
+
+inset:0;
+
+z-index:100;
+
+display:flex;
+
+flex-direction:column;
+
+justify-content:center;
+
+align-items:center;
+
+text-align:center;
+
+color:white;
+
+background:rgba(0,0,0,.88);
+
+}
+
+#menu h1{
+
+font-size:48px;
+
+margin-bottom:15px;
+
+}
+
+#menu p{
+
+font-size:18px;
+
+line-height:30px;
+
+margin-bottom:25px;
+
+}
+
+button{
+
+padding:14px 38px;
+
+border:3px solid white;
+
+border-radius:12px;
+
+background:#2563eb;
+
+color:white;
+
+font-size:20px;
+
+font-weight:bold;
+
+}
+
+#hint{
+
+position:fixed;
+
+bottom:15px;
+
+width:100%;
+
+text-align:center;
+
+color:#aaa;
+
+font-size:14px;
+
+z-index:10;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="game">
+
+<div id="score">
+
+<span id="playerScore">0</span>
+
+&nbsp;&nbsp;:&nbsp;&nbsp;
+
+<span id="aiScore">0</span>
+
+</div>
+
+
+<div id="line"></div>
+
+
+<div id="player"
+class="paddle"></div>
+
+<div id="ai"
+class="paddle"></div>
+
+<div id="ball"></div>
+
+
+<div id="hint">
+Drag your finger up and down to move
+</div>
+
+
+<div id="menu">
+
+<h1>🏓 PONG</h1>
+
+<p>
+Beat the computer!<br>
+Move your paddle with your finger.
+</p>
+
+<button id="start">
+START
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const game=
+document.getElementById("game");
+
+const playerElement=
+document.getElementById("player");
+
+const aiElement=
+document.getElementById("ai");
+
+const ballElement=
+document.getElementById("ball");
+
+const playerScoreText=
+document.getElementById("playerScore");
+
+const aiScoreText=
+document.getElementById("aiScore");
+
+const menu=
+document.getElementById("menu");
+
+const startButton=
+document.getElementById("start");
+
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let playing=false;
+
+let playerScore=0;
+
+let aiScore=0;
+
+let animation;
+
+
+/* PLAYER */
+
+let playerY=
+innerHeight/2-50;
+
+
+/* AI */
+
+let aiY=
+innerHeight/2-50;
+
+
+/* BALL */
+
+let ballX=
+innerWidth/2-10;
+
+let ballY=
+innerHeight/2-10;
+
+let ballVX=5;
+
+let ballVY=3;
+
+
+/* =========================
+   START
+========================= */
+
+function startGame(e){
+
+if(e){
+
+e.preventDefault();
+
+e.stopPropagation();
+
+}
+
+
+playerScore=0;
+
+aiScore=0;
+
+playerScoreText.textContent="0";
+
+aiScoreText.textContent="0";
+
+
+playerY=
+innerHeight/2-50;
+
+aiY=
+innerHeight/2-50;
+
+
+resetBall(
+Math.random()>0.5
+?1
+:-1
+);
+
+
+playing=true;
+
+menu.style.display="none";
+
+
+cancelAnimationFrame(animation);
+
+animation=
+requestAnimationFrame(update);
+
+}
+
+
+/* =========================
+   RESET BALL
+========================= */
+
+function resetBall(direction){
+
+ballX=
+innerWidth/2-10;
+
+ballY=
+innerHeight/2-10;
+
+
+ballVX=
+5*direction;
+
+ballVY=
+(Math.random()>.5?1:-1)
+*(2+Math.random()*2);
+
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update(){
+
+if(!playing)
+return;
+
+
+/* BALL */
+
+ballX+=ballVX;
+
+ballY+=ballVY;
+
+
+/* TOP / BOTTOM */
+
+if(
+ballY<=0
+){
+
+ballY=0;
+
+ballVY*=-1;
+
+}
+
+
+if(
+ballY>=innerHeight-20
+){
+
+ballY=
+innerHeight-20;
+
+ballVY*=-1;
+
+}
+
+
+/* AI */
+
+let aiCenter=
+aiY+50;
+
+let ballCenter=
+ballY+10;
+
+
+if(
+aiCenter<
+ballCenter-10
+){
+
+aiY+=3.8;
+
+}
+
+else if(
+aiCenter>
+ballCenter+10
+){
+
+aiY-=3.8;
+
+}
+
+
+/* AI LIMIT */
+
+aiY=
+Math.max(
+0,
+Math.min(
+innerHeight-100,
+aiY
+)
+);
+
+
+/* PLAYER COLLISION */
+
+if(
+
+ballX<=31 &&
+
+ballX>=15 &&
+
+ballY+20>=playerY &&
+
+ballY<=playerY+100 &&
+
+ballVX<0
+
+){
+
+ballX=31;
+
+ballVX=
+Math.abs(ballVX)+.25;
+
+ballVY+=
+(ballY+10-(playerY+50))
+*.05;
+
+}
+
+
+/* AI COLLISION */
+
+if(
+
+ballX+20>=innerWidth-31 &&
+
+ballX+20<=innerWidth-15 &&
+
+ballY+20>=aiY &&
+
+ballY<=aiY+100 &&
+
+ballVX>0
+
+){
+
+ballX=
+innerWidth-51;
+
+ballVX=
+-(Math.abs(ballVX)+.25);
+
+ballVY+=
+(ballY+10-(aiY+50))
+*.05;
+
+}
+
+
+/* PLAYER MISSED */
+
+if(ballX< -30){
+
+aiScore++;
+
+aiScoreText.textContent=
+aiScore;
+
+resetBall(-1);
+
+checkWinner();
+
+}
+
+
+/* AI MISSED */
+
+if(ballX>innerWidth+30){
+
+playerScore++;
+
+playerScoreText.textContent=
+playerScore;
+
+resetBall(1);
+
+checkWinner();
+
+}
+
+
+/* DRAW */
+
+playerElement.style.top=
+playerY+"px";
+
+aiElement.style.top=
+aiY+"px";
+
+ballElement.style.left=
+ballX+"px";
+
+ballElement.style.top=
+ballY+"px";
+
+
+animation=
+requestAnimationFrame(update);
+
+}
+
+
+/* =========================
+   WINNER
+========================= */
+
+function checkWinner(){
+
+if(
+playerScore>=10 ||
+aiScore>=10
+){
+
+gameOver();
+
+}
+
+}
+
+
+/* =========================
+   GAME OVER
+========================= */
+
+function gameOver(){
+
+playing=false;
+
+cancelAnimationFrame(animation);
+
+let title=
+playerScore>aiScore
+?"YOU WIN! 🏆"
+:"YOU LOSE! 💥";
+
+
+menu.style.display="flex";
+
+
+menu.innerHTML=`
+
+<h1>${title}</h1>
+
+<p>
+You: ${playerScore}<br>
+Computer: ${aiScore}
+</p>
+
+<button id="restart">
+PLAY AGAIN
+</button>
+
+`;
+
+
+document
+.getElementById("restart")
+.addEventListener(
+"pointerdown",
+startGame
+);
+
+}
+
+
+/* =========================
+   TOUCH CONTROL
+========================= */
+
+function movePlayer(y){
+
+if(!playing)
+return;
+
+
+playerY=
+y-50;
+
+
+playerY=
+Math.max(
+0,
+Math.min(
+innerHeight-100,
+playerY
+)
+);
+
+}
+
+
+/* POINTER */
+
+game.addEventListener(
+"pointermove",
+function(e){
+
+if(!playing)
+return;
+
+movePlayer(e.clientY);
+
+}
+);
+
+
+/* TOUCH */
+
+game.addEventListener(
+"touchmove",
+function(e){
+
+if(!playing)
+return;
+
+e.preventDefault();
+
+movePlayer(
+e.touches[0].clientY
+);
+
+},
+{
+passive:false
+}
+);
+
+
+/* =========================
+   MOUSE / TOUCH START
+========================= */
+
+game.addEventListener(
+"pointerdown",
+function(e){
+
+if(!playing)
+return;
+
+movePlayer(e.clientY);
+
+}
+);
+
+
+/* =========================
+   START BUTTON
+========================= */
+
+startButton.addEventListener(
+"pointerdown",
+startGame
+);
+
+
+/* =========================
+   RESIZE
+========================= */
+
+window.addEventListener(
+"resize",
+function(){
+
+if(!playing){
+
+playerY=
+innerHeight/2-50;
+
+aiY=
+innerHeight/2-50;
+
+}
+
+}
+);
+
+</script>
+
+</body>
+  </html>
