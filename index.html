@@ -53,6 +53,7 @@ header{
     border:1px solid #303642;
     padding:10px 15px;
     border-radius:10px;
+    cursor:pointer;
 }
 
 /* HERO */
@@ -143,8 +144,7 @@ header{
 
 .games{
     display:grid;
-    grid-template-columns:
-    repeat(auto-fit,minmax(180px,1fr));
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
     gap:18px;
 }
 
@@ -180,6 +180,7 @@ header{
     background:#00ff99;
     filter:blur(70px);
     opacity:.08;
+    pointer-events:none;
 }
 
 .card:hover{
@@ -191,12 +192,17 @@ header{
 .icon{
     font-size:55px;
     margin-bottom:15px;
+    position:relative;
+    z-index:2;
 }
 
 .card h3{
     font-size:19px;
     position:relative;
+    z-index:2;
 }
+
+/* PLAY BUTTON */
 
 .play{
     margin-top:12px;
@@ -206,6 +212,23 @@ header{
     background:#00ff99;
     color:#07100d;
     font-weight:bold;
+    cursor:pointer;
+    position:relative;
+    z-index:5;
+    text-decoration:none;
+}
+
+.play:hover{
+    transform:scale(1.05);
+}
+
+/* LINKS */
+
+.card a{
+    text-decoration:none;
+    color:inherit;
+    position:relative;
+    z-index:5;
 }
 
 /* CATEGORIES */
@@ -266,8 +289,7 @@ footer{
     }
 
     .games{
-        grid-template-columns:
-        repeat(2,1fr);
+        grid-template-columns:repeat(2,1fr);
         gap:12px;
     }
 
@@ -285,9 +307,7 @@ footer{
 </style>
 </head>
 
-
 <body>
-
 
 <header>
 
@@ -301,7 +321,6 @@ footer{
 </div>
 
 </header>
-
 
 <section class="hero">
 
@@ -319,7 +338,6 @@ Start Playing 🎮
 
 </section>
 
-
 <div class="searchBox">
 
 <input
@@ -330,196 +348,253 @@ placeholder="🔍 Search games..."
 
 </div>
 
-
 <section class="section" id="gameSection">
 
 <h2 class="sectionTitle">
 🔥 Featured Games
 </h2>
 
-
 <div class="games" id="games">
 
+<!-- SNAKE -->
 
 <div class="card" data-name="Snake">
 
 <div class="icon">🐍</div>
 <h3>Snake</h3>
-<button class="play" onclick="location.href='snake.html'">PLAY</button>
+
+<a href="snake.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- DODGE BLOCKS -->
 
 <div class="card" data-name="Dodge Blocks">
 
 <div class="icon">🟥</div>
 <h3>Dodge Blocks</h3>
-<button class="play" onclick="location.href='dodge.html'">
-PLAY
-</button>
+
+<a href="dodge.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- SPACE SHOOTER -->
 
 <div class="card" data-name="Space Shooter">
 
 <div class="icon">👾</div>
 <h3>Space Shooter</h3>
+
+<a href="space-shooter.html">
 <button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- RACING RUSH -->
 
 <div class="card" data-name="Racing Rush">
 
 <div class="icon">🏎️</div>
 <h3>Racing Rush</h3>
-<button class="play" onclick="location.href='racing.html'"<PLAY</button>
+
+<a href="racing.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- ZOMBIE SURVIVAL -->
 
 <div class="card" data-name="Zombie Survival">
 
 <div class="icon">🧟</div>
 <h3>Zombie Survival</h3>
+
 <a href="zombie.html">
-  <button>play</button>
+<button class="play">PLAY</button>
 </a>
 
 </div>
 
+<!-- FLAPPY BIRD -->
 
 <div class="card" data-name="Flappy Bird">
 
 <div class="icon">🐦</div>
 <h3>Flappy Bird</h3>
-    <a href="flappy-bird.html">
-  <button>play</button>
-    </a>
+
+<a href="flappy-bird.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- 2048 -->
 
 <div class="card" data-name="2048">
 
 <div class="icon">🧩</div>
 <h3>2048</h3>
-<a href="2048.html"<play</a>
+
+<a href="2048.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- PONG -->
 
 <div class="card" data-name="Pong">
 
 <div class="icon">🏓</div>
 <h3>Pong</h3>
-<a href="pong.html">Pong</a>
+
+<a href="pong.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- MINESWEEPER -->
 
 <div class="card" data-name="Minesweeper">
 
 <div class="icon">💣</div>
 <h3>Minesweeper</h3>
-<a href="minesweeper.html">💣 Minesweeper</a>
+
+<a href="minesweeper.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- AIM TRAINER -->
 
 <div class="card" data-name="Aim Trainer">
 
 <div class="icon">🎯</div>
 <h3>Aim Trainer</h3>
-<button class="play" onclick="location.href='aim.html'">PLAY</button>
+
+<a href="aim.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- FRUIT SLICE -->
 
 <div class="card" data-name="Fruit Slice">
 
 <div class="icon">🍉</div>
 <h3>Fruit Slice</h3>
-    <a href="fruit-slice.html">
-  🍉 Fruit Slice
-    </a>
+
+<a href="fruit-slice.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- ENDLESS RUNNER -->
 
 <div class="card" data-name="Endless Runner">
 
 <div class="icon">🏃</div>
 <h3>Endless Runner</h3>
+
 <a href="endless-runner.html">
-  <button>play</button>
+<button class="play">PLAY</button>
 </a>
 
 </div>
 
+<!-- ASTEROID ESCAPE -->
 
 <div class="card" data-name="Asteroid Escape">
 
 <div class="icon">🚀</div>
 <h3>Asteroid Escape</h3>
-    <a href="asteroid-escape.html">
-  🚀 Asteroid Escape
-    </a>
+
+<a href="asteroid-escape.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- PENALTY KICK -->
 
 <div class="card" data-name="Penalty Kick">
 
 <div class="icon">⚽</div>
 <h3>Penalty Kick</h3>
-<button class="play" onclick="location.href='penalty.html'">PLAY</button>
+
+<a href="penalty.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- TETRIS -->
 
 <div class="card" data-name="Tetris">
 
 <div class="icon">🟨</div>
-<a href="tetris.html">🟨 Tetris</a>
+<h3>Tetris</h3>
+
+<a href="tetris.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- CONNECT FOUR -->
 
 <div class="card" data-name="Connect Four">
 
 <div class="icon">🔴</div>
 <h3>Connect Four</h3>
+
+<a href="connect-four.html">
 <button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- MAZE ESCAPE -->
 
 <div class="card" data-name="Maze Escape">
 
 <div class="icon">🌀</div>
 <h3>Maze Escape</h3>
-<a href="maze.html">Play Maze Escape</a>
+
+<a href="maze.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
 
+<!-- BREAKOUT -->
 
 <div class="card" data-name="Breakout">
 
 <div class="icon">🧱</div>
 <h3>Breakout</h3>
-    <a href="breakout.html">
-  <button>play</button>
-    </a>
+
+<a href="breakout.html">
+<button class="play">PLAY</button>
+</a>
 
 </div>
-
 
 </div>
 
 </section>
 
+<!-- CATEGORIES -->
 
 <section class="section" id="categories">
 
@@ -540,7 +615,6 @@ PLAY
 
 </section>
 
-
 <footer>
 
 © 2026 UMINE Games
@@ -551,64 +625,50 @@ Made with ❤️ and code.
 
 </footer>
 
-
 <script>
 
-const search =
-document.getElementById("search");
+const search = document.getElementById("search");
+const cards = document.querySelectorAll(".card");
 
-const cards =
-document.querySelectorAll(".card");
+search.addEventListener("input", function(){
 
+    const text = this.value.toLowerCase();
 
-search.addEventListener("input",function(){
+    cards.forEach(card => {
 
-const text =
-this.value.toLowerCase();
+        const name = card.dataset.name.toLowerCase();
 
-cards.forEach(card=>{
+        if(name.includes(text)){
+            card.style.display = "flex";
+        }else{
+            card.style.display = "none";
+        }
 
-const name =
-card.dataset.name.toLowerCase();
-
-if(name.includes(text)){
-
-card.style.display="flex";
-
-}else{
-
-card.style.display="none";
-
-}
+    });
 
 });
-
-});
-
 
 function scrollToGames(){
 
-document
-.getElementById("gameSection")
-.scrollIntoView({
-behavior:"smooth"
-});
+    document
+    .getElementById("gameSection")
+    .scrollIntoView({
+        behavior:"smooth"
+    });
 
 }
 
-
 function scrollToCategories(){
 
-document
-.getElementById("categories")
-.scrollIntoView({
-behavior:"smooth"
-});
+    document
+    .getElementById("categories")
+    .scrollIntoView({
+        behavior:"smooth"
+    });
 
 }
 
 </script>
 
-
 </body>
-  </html>
+    </html>
