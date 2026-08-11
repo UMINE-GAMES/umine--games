@@ -195,6 +195,43 @@ header{
     position:relative;
     z-index:2;
 }
+    .game-card {
+    display: block;
+    width: 300px;
+    padding: 20px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #222;
+    transition: 0.2s;
+}
+
+.game-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px #ccc;
+}
+
+.game-card-title {
+    font-size: 22px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.game-card-text {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 18px;
+}
+
+.game-card-button {
+    display: inline-block;
+    padding: 10px 18px;
+    background: #222;
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+}
 
 .card h3{
     font-size:19px;
@@ -379,7 +416,16 @@ placeholder="🔍 Search games..."
 <a href="dodge.html">
 <button class="play">PLAY</button>
 </a>
-
+    
+<a href="ultimate-clicker.html" class="game-card">
+    <div class="game-card-title">Ultimate Clicker</div>
+    <div class="game-card-text">
+        Click, upgrade, unlock powerful abilities and reach the highest score!
+    </div>
+    <div class="game-card-button">
+        PLAY GAME
+    </div>
+</a>
 </div>
 
 <!-- SPACE SHOOTER -->
