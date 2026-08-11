@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Clicker</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #eeeeee;
+    color: #222;
+}
+
+.game {
+    width: 95%;
+    max-width: 600px;
+    margin: 25px auto;
+    background: white;
+    padding: 22px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+h1 {
+    text-align: center;
+    margin-top: 0;
+}
+
+.score-area {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#score {
+    font-size: 55px;
+    font-weight: bold;
+}
+
+#power {
+    color: #666;
+    margin-top: 5px;
+}
+
+button {
+    width: 100%;
+    padding: 13px;
+    margin: 5px 0;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    background: #f5f5f5;
+    color: #222;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #e5e5e5;
+}
+
+button:disabled {
+    background: #ddd;
+    color: #999;
+    cursor: not-allowed;
+}
+
+#clickButton {
+    background: #222;
+    color: white;
+    border: none;
+    font-size: 22px;
+    padding: 20px;
+}
+
+#clickButton:hover {
+    background: #111;
+}
+
+#upgradeToggle {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+#upgradeMenu {
+    display: none;
+    margin-top: 15px;
+}
+
+#upgradeMenu.open {
+    display: block;
+}
+
+.search {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.upgrade-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.upgrade {
+    text-align: left;
+}
+
+.upgrade-name {
+    font-weight: bold;
+}
+
+.upgrade-info {
+    font-size: 12px;
+    color: #777;
+    margin-top: 4px;
+}
+
+.special {
+    background: #fff4d6;
+}
+
+.purchased {
+    background: #d9ffd9 !important;
+    color: #267026 !important;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+    text-align: center;
+    color: #555;
+}
+
+.stats b {
+    color: #222;
+}
+
+#message {
+    text-align: center;
+    min-height: 22px;
+    margin-top: 15px;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <h1>Ultimate Clicker</h1>
+
+    <div class="score-area">
+        <div id="score">0</div>
+        <div id="power">1 point per click</div>
+    </div>
+
+    <button id="clickButton">CLICK</button>
+
+    <button id="upgradeToggle">UPGRADES</button>
+
+    <div id="upgradeMenu">
+
+        <input
+            class="search"
+            id="search"
+            type="text"
+            placeholder="Search upgrades..."
+        >
+
+        <div class="upgrade-list" id="upgradeList"></div>
+
+    </div>
+
+    <div class="stats">
+
+        <div>
+            <b>Best</b><br>
+            <span id="best">0</span>
+        </div>
+
+        <div>
+            <b>Clicks</b><br>
+            <span id="clicks">0</span>
+        </div>
+
+        <div>
+            <b>Multiplier</b><br>
+            <span id="multiplier">1x</span>
+        </div>
+
+    </div>
+
+    <div id="message"></div>
+
+</div>
+
+<script>
+
+/* =========================
+   GAME VARIABLES
+========================= */
+
+let score = 0;
+let power = 1;
+let clicks = 0;
+let best = 0;
+
+let multiplier = 1;
+
+let autoClick = 0;
+
+let criticalChance = 0;
+let criticalMultiplier = 5;
+
+let combo = 0;
+let comboMultiplier = 1;
+
+let luck = 0;
+
+let megaPower = 0;
+
+let purchased = new Set();
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const scoreText =
+    document.getElementById("score");
+
+const powerText =
+    document.getElementById("power");
+
+const bestText =
+    document.getElementById("best");
+
+const clicksText =
+    document.getElementById("clicks");
+
+const multiplierText =
+    document.getElementById("multiplier");
+
+const clickButton =
+    document.getElementById("clickButton");
+
+const upgradeToggle =
+    document.getElementById("upgradeToggle");
+
+const upgradeMenu =
+    document.getElementById("upgradeMenu");
+
+const upgradeList =
+    document.getElementById("upgradeList");
+
+const search =
+    document.getElementById("search");
+
+const message =
+    document.getElementById("message");
+
+
+/* =========================
+   UPGRADE DATABASE
+========================= */
+
+const upgrades = [];
+
+
+/* =========================
+   SPECIAL UPGRADES
+========================= */
+
+upgrades.push({
+    id: "hammer",
+    name: "🔨 HAMMER",
+    price: 50,
+    type: "hammer",
+    description: "One-time use. Set your score to 100."
+});
+
+upgrades.push({
+    id: "strike",
+    name: "💥 STRIKE",
+    price: 1000,
+    type: "strike",
+    description: "One-time use. Set your score to 10,000."
+});
+
+upgrades.push({
+    id: "jackpot",
+    name: "🎰 JACKPOT",
+    price: 5000,
+    type: "jackpot",
+    description: "One-time use. Gives a huge random reward."
+});
+
+
+/* =========================
+   POWER
+========================= */
+
+for (let i = 1; i <= 150; i++) {
+
+    upgrades.push({
+        id: "power_" + i,
+        name: "Power Upgrade " + i,
+        price: Math.floor(10 * Math.pow(1.06, i - 1)),
+        type: "power",
+        value: i,
+        description:
+            "Increase click power by " + i + "."
+    });
+}
+
+
+/* =========================
+   AUTO CLICK
+========================= */
+
+for (let i = 1; i <= 150; i++) {
+
+    upgrades.push({
+        id: "auto_" + i,
+        name: "Auto Clicker " + i,
+        price: Math.floor(100 * Math.pow(1.065, i - 1)),
+        type: "auto",
+        value: i,
+        description:
+            "Gain " + i + " automatic point(s) every second."
+    });
+}
+
+
+/* =========================
+   MULTIPLIER
+========================= */
+
+for (let i = 1; i <= 150; i++) {
+
+    upgrades.push({
+        id: "multiplier_" + i,
+        name: "Multiplier " + i,
+        price: Math.floor(250 * Math.pow(1.07, i - 1)),
+        type: "multiplier",
+        value: 0.05,
+        description:
+            "Increase your score multiplier by 5%."
+    });
+}
+
+
+/* =========================
+   CRITICAL
+========================= */
+
+for (let i = 1; i <= 100; i++) {
+
+    upgrades.push({
+        id: "critical_" + i,
+        name: "Critical Hit " + i,
+        price: Math.floor(500 * Math.pow(1.075, i - 1)),
+        type: "critical",
+        value: 1,
+        description:
+            "Increase critical hit chance by 1%."
+    });
+}
+
+
+/* =========================
+   COMBO
+========================= */
+
+for (let i = 1; i <= 100; i++) {
+
+    upgrades.push({
+        id: "combo_" + i,
+        name: "Combo Upgrade " + i,
+        price: Math.floor(750 * Math.pow(1.075, i - 1)),
+        type: "combo",
+        value: 0.1,
+        description:
+            "Increase combo bonus by 10%."
+    });
+}
+
+
+/* =========================
+   LUCK
+========================= */
+
+for (let i = 1; i <= 100; i++) {
+
+    upgrades.push({
+        id: "luck_" + i,
+        name: "Lucky Upgrade " + i,
+        price: Math.floor(1000 * Math.pow(1.08, i - 1)),
+        type: "luck",
+        value: 1,
+        description:
+            "Increase your chance of bonus rewards."
+    });
+}
+
+
+/* =========================
+   TIME BOOST
+========================= */
+
+for (let i = 1; i <= 100; i++) {
+
+    upgrades.push({
+        id: "time_" + i,
+        name: "Time Boost " + i,
+        price: Math.floor(1500 * Math.pow(1.08, i - 1)),
+        type: "time",
+        value: 1,
+        description:
+            "Increase automatic income by 5%."
+    });
+}
+
+
+/* =========================
+   MEGA POWER
+========================= */
+
+for (let i = 1; i <= 100; i++) {
+
+    upgrades.push({
+        id: "mega_" + i,
+        name: "Mega Upgrade " + i,
+        price: Math.floor(2500 * Math.pow(1.085, i - 1)),
+        type: "mega",
+        value: i * 5,
+        description:
+            "Add " + (i * 5) + " bonus power to clicks."
+    });
+}
+
+
+/* =========================
+   GOLDEN
+========================= */
+
+for (let i = 1; i <= 50; i++) {
+
+    upgrades.push({
+        id: "gold_" + i,
+        name: "Golden Click " + i,
+        price: Math.floor(5000 * Math.pow(1.09, i - 1)),
+        type: "gold",
+        value: i * 100,
+        description:
+            "Adds a chance for a golden bonus."
+    });
+}
+
+
+/*
+3 special
+150 power
+150 auto
+150 multiplier
+100 critical
+100 combo
+100 luck
+100 time
+100 mega
+50 golden
+
+= 1003 upgrades
+*/
+
+
+/* =========================
+   NUMBER FORMAT
+========================= */
+
+function formatNumber(number) {
+
+    if (number < 1000) {
+        return Math.floor(number);
+    }
+
+    if (number < 1000000) {
+        return (number / 1000).toFixed(1) + "K";
+    }
+
+    if (number < 1000000000) {
+        return (number / 1000000).toFixed(1) + "M";
+    }
+
+    if (number < 1000000000000) {
+        return (number / 1000000000).toFixed(1) + "B";
+    }
+
+    if (number < 1000000000000000) {
+        return (number / 1000000000000).toFixed(1) + "T";
+    }
+
+    return number.toExponential(2);
+}
+
+
+/* =========================
+   UPDATE
+========================= */
+
+function update() {
+
+    scoreText.textContent =
+        formatNumber(score);
+
+    powerText.textContent =
+        formatNumber(
+            power *
+            multiplier *
+            comboMultiplier
+        ) +
+        " points per click";
+
+    bestText.textContent =
+        formatNumber(best);
+
+    clicksText.textContent =
+        formatNumber(clicks);
+
+    multiplierText.textContent =
+        multiplier.toFixed(2) + "x";
+
+    updateUpgradeButtons();
+}
+
+
+/* =========================
+   MESSAGE
+========================= */
+
+function showMessage(text) {
+
+    message.textContent = text;
+
+    setTimeout(function() {
+        message.textContent = "";
+    }, 1600);
+}
+
+
+/* =========================
+   NORMAL CLICK
+========================= */
+
+clickButton.addEventListener(
+    "click",
+    function() {
+
+        let amount =
+            power *
+            multiplier *
+            comboMultiplier;
+
+        clicks++;
+
+        combo++;
+
+        /*
+        Every 10 clicks:
+        increase combo
+        */
+
+        if (combo % 10 === 0) {
+
+            comboMultiplier += 0.1;
+
+            showMessage(
+                "Combo bonus increased!"
+            );
+        }
+
+
+        /* Critical hit */
+
+        if (
+            Math.random() * 100 <
+            criticalChance
+        ) {
+
+            amount *= criticalMultiplier;
+
+            showMessage(
+                "CRITICAL HIT!"
+            );
+        }
+
+
+        /* Luck bonus */
+
+        if (
+            Math.random() * 100 <
+            luck
+        ) {
+
+            amount *= 2;
+
+            showMessage(
+                "LUCKY BONUS!"
+            );
+        }
+
+
+        /* Golden bonus */
+
+        if (
+            Math.random() * 100 < 1
+        ) {
+
+            amount += megaPower * 10;
+
+            showMessage(
+                "GOLDEN BONUS!"
+            );
+        }
+
+
+        score += amount;
+
+        if (score > best) {
+            best = score;
+        }
+
+        update();
+    }
+);
+
+
+/* =========================
+   OPEN UPGRADES
+========================= */
+
+upgradeToggle.addEventListener(
+    "click",
+    function() {
+
+        upgradeMenu.classList.toggle("open");
+
+        if (
+            upgradeMenu.classList.contains("open")
+        ) {
+
+            upgradeToggle.textContent =
+                "CLOSE UPGRADES";
+
+        } else {
+
+            upgradeToggle.textContent =
+                "UPGRADES";
+        }
+    }
+);
+
+
+/* =========================
+   RENDER
+========================= */
+
+function renderUpgrades() {
+
+    upgradeList.innerHTML = "";
+
+    const filter =
+        search.value.toLowerCase();
+
+    upgrades.forEach(function(upgrade) {
+
+        if (
+            !upgrade.name
+                .toLowerCase()
+                .includes(filter)
+        ) {
+            return;
+        }
+
+
+        const button =
+            document.createElement("button");
+
+        button.className =
+            "upgrade";
+
+
+        if (
+            upgrade.type === "hammer" ||
+            upgrade.type === "strike" ||
+            upgrade.type === "jackpot"
+        ) {
+
+            button.classList.add("special");
+        }
+
+
+        if (
+            purchased.has(upgrade.id)
+        ) {
+
+            button.disabled = true;
+
+            button.classList.add(
+                "purchased"
+            );
+
+            button.innerHTML =
+                "✓ " +
+                upgrade.name +
+                " — PURCHASED";
+
+        } else {
+
+            button.disabled =
+                score < upgrade.price;
+
+            button.innerHTML =
+                '<div class="upgrade-name">' +
+                upgrade.name +
+                " — " +
+                formatNumber(
+                    upgrade.price
+                ) +
+                "</div>" +
+
+                '<div class="upgrade-info">' +
+                upgrade.description +
+                "</div>";
+        }
+
+
+        button.addEventListener(
+            "click",
+            function() {
+
+                buyUpgrade(upgrade);
+
+            }
+        );
+
+
+        upgradeList.appendChild(button);
+    });
+}
+
+
+/* =========================
+   UPDATE BUTTONS
+========================= */
+
+function updateUpgradeButtons() {
+
+    const buttons =
+        upgradeList.querySelectorAll(
+            ".upgrade"
+        );
+
+    buttons.forEach(function(button) {
+
+        /*
+        Re-rendering keeps prices,
+        purchase state and score
+        updated.
+        */
+
+    });
+
+    renderUpgrades();
+}
+
+
+/* =========================
+   BUY
+========================= */
+
+function buyUpgrade(upgrade) {
+
+    if (
+        purchased.has(upgrade.id)
+    ) {
+        return;
+    }
+
+
+    if (
+        score < upgrade.price
+    ) {
+
+        showMessage(
+            "Not enough score."
+        );
+
+        return;
+    }
+
+
+    score -= upgrade.price;
+
+
+    /* HAMMER */
+
+    if (
+        upgrade.type === "hammer"
+    ) {
+
+        score = 100;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "HAMMER USED!"
+        );
+    }
+
+
+    /* STRIKE */
+
+    else if (
+        upgrade.type === "strike"
+    ) {
+
+        score = 10000;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "STRIKE! 10,000 SCORE!"
+        );
+    }
+
+
+    /* JACKPOT */
+
+    else if (
+        upgrade.type === "jackpot"
+    ) {
+
+        const reward =
+            Math.floor(
+                Math.random() * 50000
+            ) + 10000;
+
+        score += reward;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "JACKPOT! +" +
+            formatNumber(reward)
+        );
+    }
+
+
+    /* POWER */
+
+    else if (
+        upgrade.type === "power"
+    ) {
+
+        power += upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Power increased!"
+        );
+    }
+
+
+    /* AUTO */
+
+    else if (
+        upgrade.type === "auto"
+    ) {
+
+        autoClick += upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Auto Clicker upgraded!"
+        );
+    }
+
+
+    /* MULTIPLIER */
+
+    else if (
+        upgrade.type === "multiplier"
+    ) {
+
+        multiplier +=
+            upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Multiplier increased!"
+        );
+    }
+
+
+    /* CRITICAL */
+
+    else if (
+        upgrade.type === "critical"
+    ) {
+
+        criticalChance +=
+            upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Critical chance increased!"
+        );
+    }
+
+
+    /* COMBO */
+
+    else if (
+        upgrade.type === "combo"
+    ) {
+
+        comboMultiplier +=
+            upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Combo power increased!"
+        );
+    }
+
+
+    /* LUCK */
+
+    else if (
+        upgrade.type === "luck"
+    ) {
+
+        luck +=
+            upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Luck increased!"
+        );
+    }
+
+
+    /* TIME */
+
+    else if (
+        upgrade.type === "time"
+    ) {
+
+        autoClick *= 1.05;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Auto income increased!"
+        );
+    }
+
+
+    /* MEGA */
+
+    else if (
+        upgrade.type === "mega"
+    ) {
+
+        megaPower +=
+            upgrade.value;
+
+        power +=
+            upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Mega Power activated!"
+        );
+    }
+
+
+    /* GOLD */
+
+    else if (
+        upgrade.type === "gold"
+    ) {
+
+        megaPower +=
+            upgrade.value;
+
+        purchased.add(
+            upgrade.id
+        );
+
+        showMessage(
+            "Golden power increased!"
+        );
+    }
+
+
+    update();
+}
+
+
+/* =========================
+   SEARCH
+========================= */
+
+search.addEventListener(
+    "input",
+    function() {
+
+        renderUpgrades();
+
+    }
+);
+
+
+/* =========================
+   AUTO CLICK
+========================= */
+
+setInterval(
+    function() {
+
+        if (
+            autoClick > 0
+        ) {
+
+            score +=
+                autoClick *
+                multiplier;
+
+            if (score > best) {
+                best = score;
+            }
+
+            update();
+        }
+
+    },
+    1000
+);
+
+
+/* =========================
+   START
+========================= */
+
+renderUpgrades();
+update();
+
+</script>
+
+</body>
+  </html>
