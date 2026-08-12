@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Memory Match</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+touch-action:none;
+font-family:Arial,sans-serif;
+background:#111827;
+}
+
+#game{
+min-height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding-top:22px;
+}
+
+h1{
+color:white;
+font-size:34px;
+margin-bottom:8px;
+}
+
+#hud{
+width:340px;
+max-width:92vw;
+
+display:flex;
+justify-content:space-between;
+
+color:white;
+
+font-size:17px;
+font-weight:bold;
+
+margin-bottom:12px;
+}
+
+#board{
+width:340px;
+max-width:92vw;
+
+display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
+gap:9px;
+}
+
+.card{
+aspect-ratio:1;
+
+perspective:600px;
+
+cursor:pointer;
+}
+
+.card-inner{
+width:100%;
+height:100%;
+
+position:relative;
+
+transform-style:preserve-3d;
+
+transition:.35s;
+
+}
+
+.card.flipped .card-inner{
+transform:rotateY(180deg);
+}
+
+.face{
+position:absolute;
+
+inset:0;
+
+border-radius:10px;
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+backface-visibility:hidden;
+
+font-size:35px;
+font-weight:bold;
+
+}
+
+.front{
+background:#2563eb;
+color:white;
+
+box-shadow:
+0 4px 8px rgba(0,0,0,.35);
+}
+
+.back{
+background:#f8fafc;
+
+transform:rotateY(180deg);
+}
+
+.card.matched .back{
+background:#86efac;
+}
+
+#message{
+height:25px;
+
+margin-top:12px;
+
+color:#facc15;
+
+font-weight:bold;
+}
+
+button{
+margin-top:10px;
+
+padding:12px 28px;
+
+border:2px solid white;
+
+border-radius:10px;
+
+background:#7c3aed;
+
+color:white;
+
+font-size:17px;
+
+font-weight:bold;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>🧠 MEMORY MATCH</h1>
+
+<div id="hud">
+
+<span>
+Moves: <b id="moves">0</b>
+</span>
+
+<span>
+Pairs: <b id="pairs">0</b>/8
+</span>
+
+</div>
+
+<div id="board"></div>
+
+<div id="message"></div>
+
+<button id="restart">
+NEW GAME
+</button>
+
+</div>
+
+
+<script>
+
+const board=
+document.getElementById("board");
+
+const movesText=
+document.getElementById("moves");
+
+const pairsText=
+document.getElementById("pairs");
+
+const message=
+document.getElementById("message");
+
+const restart=
+document.getElementById("restart");
+
+
+const symbols=[
+"🍎",
+"🍌",
+"🍉",
+"🍓",
+"🍇",
+"🍊",
+"🥝",
+"🍍"
+];
+
+
+let cards=[];
+
+let first=null;
+
+let second=null;
+
+let lock=false;
+
+let moves=0;
+
+let pairs=0;
+
+
+/* =========================
+   SHUFFLE
+========================= */
+
+function shuffle(array){
+
+for(
+let i=array.length-1;
+i>0;
+i--
+){
+
+let j=
+Math.floor(
+Math.random()*(i+1)
+);
+
+[
+array[i],
+array[j]
+]=[
+array[j],
+array[i]
+];
+
+}
+
+return array;
+
+}
+
+
+/* =========================
+   START GAME
+========================= */
+
+function startGame(){
+
+board.innerHTML="";
+
+message.textContent="";
+
+moves=0;
+
+pairs=0;
+
+first=null;
+
+second=null;
+
+lock=false;
+
+movesText.textContent="0";
+
+pairsText.textContent="0";
+
+
+let deck=
+shuffle(
+[...symbols,...symbols]
+);
+
+
+deck.forEach(
+(symbol,index)=>{
+
+let card=
+document.createElement("div");
+
+card.className="card";
+
+card.innerHTML=`
+
+<div class="card-inner">
+
+<div class="face front">
+?
+</div>
+
+<div class="face back">
+${symbol}
+</div>
+
+</div>
+
+`;
+
+card.dataset.symbol=symbol;
+
+card.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+flipCard(card);
+
+}
+);
+
+board.appendChild(card);
+
+cards.push(card);
+
+}
+
+);
+
+}
+
+
+/* =========================
+   FLIP CARD
+========================= */
+
+function flipCard(card){
+
+if(lock)
+return;
+
+if(card===first)
+return;
+
+if(
+card.classList.contains("matched")
+)
+return;
+
+if(
+card.classList.contains("flipped")
+)
+return;
+
+
+card.classList.add("flipped");
+
+
+if(!first){
+
+first=card;
+
+return;
+
+}
+
+
+second=card;
+
+moves++;
+
+movesText.textContent=
+moves;
+
+checkMatch();
+
+}
+
+
+/* =========================
+   CHECK MATCH
+========================= */
+
+function checkMatch(){
+
+let a=first.dataset.symbol;
+
+let b=second.dataset.symbol;
+
+
+if(a===b){
+
+first.classList.add("matched");
+
+second.classList.add("matched");
+
+pairs++;
+
+pairsText.textContent=
+pairs;
+
+first=null;
+
+second=null;
+
+
+if(pairs===8){
+
+message.textContent=
+"🏆 YOU WIN!";
+
+}
+
+}else{
+
+lock=true;
+
+setTimeout(
+function(){
+
+first.classList.remove("flipped");
+
+second.classList.remove("flipped");
+
+first=null;
+
+second=null;
+
+lock=false;
+
+},
+700
+);
+
+}
+
+}
+
+
+/* =========================
+   RESTART
+========================= */
+
+restart.addEventListener(
+"pointerdown",
+function(){
+
+cards=[];
+
+startGame();
+
+}
+);
+
+
+/* =========================
+   START
+========================= */
+
+startGame();
+
+</script>
+
+</body>
+</html>
