@@ -1,0 +1,699 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+
+<title>Connect Four</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+touch-action:none;
+font-family:Arial,sans-serif;
+background:#0f172a;
+}
+
+#game{
+min-height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+padding-top:22px;
+}
+
+h1{
+color:white;
+font-size:38px;
+margin-bottom:8px;
+}
+
+#turn{
+color:#cbd5e1;
+font-size:18px;
+font-weight:bold;
+margin-bottom:12px;
+}
+
+#board{
+width:350px;
+height:300px;
+max-width:94vw;
+max-height:80vw;
+
+padding:10px;
+
+display:grid;
+grid-template-columns:repeat(7,1fr);
+grid-template-rows:repeat(6,1fr);
+gap:7px;
+
+background:#2563eb;
+border:4px solid #1d4ed8;
+border-radius:16px;
+
+box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+
+.cell{
+width:100%;
+height:100%;
+
+border-radius:50%;
+
+background:#dbeafe;
+
+box-shadow:
+inset 0 3px 5px rgba(0,0,0,.25);
+}
+
+.cell.red{
+background:#ef4444;
+}
+
+.cell.yellow{
+background:#facc15;
+}
+
+#message{
+height:30px;
+margin-top:15px;
+
+color:#facc15;
+
+font-size:21px;
+font-weight:bold;
+}
+
+#restart{
+margin-top:8px;
+
+padding:12px 28px;
+
+border:2px solid white;
+border-radius:10px;
+
+background:#7c3aed;
+color:white;
+
+font-size:17px;
+font-weight:bold;
+}
+
+#columns{
+width:350px;
+max-width:94vw;
+
+display:grid;
+grid-template-columns:repeat(7,1fr);
+
+gap:7px;
+
+margin-bottom:6px;
+}
+
+.drop{
+height:34px;
+
+border:0;
+border-radius:8px;
+
+background:#334155;
+
+color:white;
+
+font-size:20px;
+font-weight:bold;
+}
+
+.drop:active{
+background:#64748b;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<h1>🔴 CONNECT FOUR</h1>
+
+<div id="turn">
+Your turn — 🔴
+</div>
+
+<div id="columns">
+
+<button class="drop" data-col="0">↓</button>
+<button class="drop" data-col="1">↓</button>
+<button class="drop" data-col="2">↓</button>
+<button class="drop" data-col="3">↓</button>
+<button class="drop" data-col="4">↓</button>
+<button class="drop" data-col="5">↓</button>
+<button class="drop" data-col="6">↓</button>
+
+</div>
+
+<div id="board"></div>
+
+<div id="message"></div>
+
+<button id="restart">
+NEW GAME
+</button>
+
+</div>
+
+
+<script>
+
+const ROWS=6;
+const COLS=7;
+
+const boardElement=
+document.getElementById("board");
+
+const turnText=
+document.getElementById("turn");
+
+const message=
+document.getElementById("message");
+
+const restart=
+document.getElementById("restart");
+
+let board=[];
+let gameOver=false;
+let playerTurn=true;
+
+
+/* =========================
+   START GAME
+========================= */
+
+function startGame(){
+
+board=[];
+
+gameOver=false;
+
+playerTurn=true;
+
+message.textContent="";
+
+turnText.textContent=
+"Your turn — 🔴";
+
+
+for(let r=0;r<ROWS;r++){
+
+board[r]=[];
+
+for(let c=0;c<COLS;c++){
+
+board[r][c]=0;
+
+}
+
+}
+
+draw();
+
+}
+
+
+/* =========================
+   DRAW
+========================= */
+
+function draw(){
+
+boardElement.innerHTML="";
+
+for(let r=0;r<ROWS;r++){
+
+for(let c=0;c<COLS;c++){
+
+let cell=
+document.createElement("div");
+
+cell.className="cell";
+
+if(board[r][c]===1){
+
+cell.classList.add("red");
+
+}
+
+if(board[r][c]===2){
+
+cell.classList.add("yellow");
+
+}
+
+boardElement.appendChild(cell);
+
+}
+
+}
+
+}
+
+
+/* =========================
+   DROP PIECE
+========================= */
+
+function dropPiece(col,player){
+
+for(let r=ROWS-1;r>=0;r--){
+
+if(board[r][col]===0){
+
+board[r][col]=player;
+
+return r;
+
+}
+
+}
+
+return -1;
+
+}
+
+
+/* =========================
+   PLAYER MOVE
+========================= */
+
+function playerMove(col){
+
+if(gameOver || !playerTurn)
+return;
+
+let row=
+dropPiece(col,1);
+
+if(row===-1)
+return;
+
+draw();
+
+
+if(checkWin(1)){
+
+message.textContent=
+"🏆 YOU WIN!";
+
+gameOver=true;
+
+turnText.textContent=
+"Game Over";
+
+return;
+
+}
+
+
+if(isDraw()){
+
+message.textContent=
+"🤝 DRAW!";
+
+gameOver=true;
+
+return;
+
+}
+
+
+playerTurn=false;
+
+turnText.textContent=
+"Computer is thinking...";
+
+
+setTimeout(
+computerMove,
+400
+);
+
+}
+
+
+/* =========================
+   COMPUTER MOVE
+========================= */
+
+function computerMove(){
+
+if(gameOver)
+return;
+
+
+/* WIN */
+
+let move=
+findWinningColumn(2);
+
+if(move!==-1){
+
+placeComputer(move);
+
+return;
+
+}
+
+
+/* BLOCK */
+
+move=
+findWinningColumn(1);
+
+if(move!==-1){
+
+placeComputer(move);
+
+return;
+
+}
+
+
+/* CENTER */
+
+if(
+getValidColumns().includes(3)
+){
+
+placeComputer(3);
+
+return;
+
+}
+
+
+/* RANDOM SMART */
+
+let valid=
+getValidColumns();
+
+move=
+valid[
+Math.floor(
+Math.random()*valid.length
+)
+];
+
+placeComputer(move);
+
+}
+
+
+/* =========================
+   COMPUTER PLACE
+========================= */
+
+function placeComputer(col){
+
+dropPiece(col,2);
+
+draw();
+
+
+if(checkWin(2)){
+
+message.textContent=
+"💥 COMPUTER WINS!";
+
+turnText.textContent=
+"Game Over";
+
+gameOver=true;
+
+return;
+
+}
+
+
+if(isDraw()){
+
+message.textContent=
+"🤝 DRAW!";
+
+gameOver=true;
+
+return;
+
+}
+
+
+playerTurn=true;
+
+turnText.textContent=
+"Your turn — 🔴";
+
+}
+
+
+/* =========================
+   VALID COLUMNS
+========================= */
+
+function getValidColumns(){
+
+let result=[];
+
+for(let c=0;c<COLS;c++){
+
+if(board[0][c]===0){
+
+result.push(c);
+
+}
+
+}
+
+return result;
+
+}
+
+
+/* =========================
+   FIND WINNING COLUMN
+========================= */
+
+function findWinningColumn(player){
+
+let valid=
+getValidColumns();
+
+for(let i=0;i<valid.length;i++){
+
+let col=valid[i];
+
+let row=
+dropPiece(col,player);
+
+if(row===-1)
+continue;
+
+let win=
+checkWin(player);
+
+board[row][col]=0;
+
+if(win)
+return col;
+
+}
+
+return -1;
+
+}
+
+
+/* =========================
+   CHECK WIN
+========================= */
+
+function checkWin(player){
+
+/* HORIZONTAL */
+
+for(let r=0;r<ROWS;r++){
+
+for(let c=0;c<=COLS-4;c++){
+
+if(
+board[r][c]===player &&
+board[r][c+1]===player &&
+board[r][c+2]===player &&
+board[r][c+3]===player
+){
+
+return true;
+
+}
+
+}
+
+}
+
+
+/* VERTICAL */
+
+for(let r=0;r<=ROWS-4;r++){
+
+for(let c=0;c<COLS;c++){
+
+if(
+board[r][c]===player &&
+board[r+1][c]===player &&
+board[r+2][c]===player &&
+board[r+3][c]===player
+){
+
+return true;
+
+}
+
+}
+
+}
+
+
+/* DIAGONAL DOWN */
+
+for(let r=0;r<=ROWS-4;r++){
+
+for(let c=0;c<=COLS-4;c++){
+
+if(
+board[r][c]===player &&
+board[r+1][c+1]===player &&
+board[r+2][c+2]===player &&
+board[r+3][c+3]===player
+){
+
+return true;
+
+}
+
+}
+
+}
+
+
+/* DIAGONAL UP */
+
+for(let r=3;r<ROWS;r++){
+
+for(let c=0;c<=COLS-4;c++){
+
+if(
+board[r][c]===player &&
+board[r-1][c+1]===player &&
+board[r-2][c+2]===player &&
+board[r-3][c+3]===player
+){
+
+return true;
+
+}
+
+}
+
+}
+
+return false;
+
+}
+
+
+/* =========================
+   DRAW CHECK
+========================= */
+
+function isDraw(){
+
+return getValidColumns().length===0;
+
+}
+
+
+/* =========================
+   DROP BUTTONS
+========================= */
+
+document
+.querySelectorAll(".drop")
+.forEach(
+button=>{
+
+button.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+let col=
+Number(
+button.dataset.col
+);
+
+playerMove(col);
+
+}
+);
+
+}
+);
+
+
+/* =========================
+   RESTART
+========================= */
+
+restart.addEventListener(
+"pointerdown",
+function(e){
+
+e.preventDefault();
+
+startGame();
+
+}
+);
+
+
+/* =========================
+   START
+========================= */
+
+startGame();
+
+</script>
+
+</body>
+</html>
+
+Connection / HREF
+
+<a href="connect-four.html" class="game-card">
+  <div class="icon">🔴</div>
+  <h2>Connect Four</h2>
+  <p>Connect four to win!</p>
+  <span class="play">PLAY</span>
+</a>
