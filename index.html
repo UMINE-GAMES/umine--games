@@ -1,0 +1,800 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>UMINE Games</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#0b0d12;
+    color:white;
+}
+
+header{
+    padding:22px 28px;
+    border-bottom:1px solid #292d35;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    gap:18px;
+}
+
+.logo{
+    font-size:32px;
+    font-weight:bold;
+    color:#00f5a0;
+}
+
+.nav{
+    display:flex;
+    gap:10px;
+}
+
+.nav a{
+    color:white;
+    text-decoration:none;
+
+    background:#171b22;
+    border:1px solid #303641;
+
+    padding:11px 17px;
+    border-radius:12px;
+
+    transition:.2s;
+}
+
+.nav a:hover{
+    border-color:#00f5a0;
+}
+
+main{
+    max-width:1100px;
+    margin:auto;
+
+    padding:34px 22px 55px;
+}
+
+h1{
+    font-size:40px;
+    margin:0 0 25px;
+}
+
+.games-grid{
+    display:grid;
+
+    grid-template-columns:
+    repeat(2,minmax(0,1fr));
+
+    gap:18px;
+}
+
+.game-card{
+    min-height:300px;
+
+    padding:24px;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+
+    background:#151a21;
+
+    border:1px solid #292f39;
+    border-radius:20px;
+
+    text-decoration:none;
+    color:white;
+
+    transition:.15s;
+
+    overflow:hidden;
+}
+
+.game-card:hover{
+    transform:translateY(-4px);
+    border-color:#00f5a0;
+    box-shadow:0 8px 30px rgba(0,245,160,.08);
+}
+
+.icon{
+    text-align:center;
+
+    font-size:60px;
+
+    margin:12px 0 18px;
+}
+
+.game-card h2{
+    margin:0 0 9px;
+    font-size:25px;
+}
+
+.game-card p{
+    margin:0;
+
+    color:#aeb5c0;
+
+    line-height:1.45;
+}
+
+.play{
+    display:inline-block;
+
+    width:fit-content;
+
+    margin-top:20px;
+
+    padding:12px 27px;
+
+    border-radius:10px;
+
+    background:#00f5a0;
+
+    color:#07120e;
+
+    font-weight:bold;
+}
+
+footer{
+    text-align:center;
+
+    padding:24px;
+
+    color:#777;
+
+    border-top:1px solid #22262e;
+}
+
+
+/* MOBILE */
+
+@media(max-width:650px){
+
+    header{
+        flex-direction:column;
+        align-items:flex-start;
+    }
+
+    .games-grid{
+        grid-template-columns:1fr;
+    }
+
+    h1{
+        font-size:34px;
+    }
+
+    .game-card{
+        min-height:270px;
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+
+<header>
+
+    <div class="logo">
+        🎮 UMINE Games
+    </div>
+
+    <nav class="nav">
+
+        <a href="#games">
+            Games
+        </a>
+
+        <a href="#games">
+            Categories
+        </a>
+
+    </nav>
+
+</header>
+
+
+
+<main id="games">
+
+    <h1>
+        🔥 Featured Games
+    </h1>
+
+
+    <div class="games-grid">
+
+
+        <!-- 2048 -->
+
+        <a class="game-card" href="2048.html">
+
+            <div>
+
+                <div class="icon">
+                    🔢
+                </div>
+
+                <h2>
+                    2048
+                </h2>
+
+                <p>
+                    Classic 2048 puzzle game.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- AIM TRAINER -->
+
+        <a class="game-card" href="aim.html">
+
+            <div>
+
+                <div class="icon">
+                    🎯
+                </div>
+
+                <h2>
+                    Aim Trainer
+                </h2>
+
+                <p>
+                    Test your aim and reaction speed.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- ASTEROID ESCAPE -->
+
+        <a class="game-card" href="astroid-escape.html">
+
+            <div>
+
+                <div class="icon">
+                    ☄️
+                </div>
+
+                <h2>
+                    Asteroid Escape
+                </h2>
+
+                <p>
+                    Escape the asteroids and survive.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- BREAKOUT -->
+
+        <a class="game-card" href="breakout.html">
+
+            <div>
+
+                <div class="icon">
+                    🧱
+                </div>
+
+                <h2>
+                    Breakout
+                </h2>
+
+                <p>
+                    Break the blocks and clear the level.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- DODGE -->
+
+        <a class="game-card" href="dodge.html">
+
+            <div>
+
+                <div class="icon">
+                    🟥
+                </div>
+
+                <h2>
+                    Dodge
+                </h2>
+
+                <p>
+                    Dodge obstacles and survive.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- ENDLESS RUNNER -->
+
+        <a class="game-card" href="endless-runner.html">
+
+            <div>
+
+                <div class="icon">
+                    🏃
+                </div>
+
+                <h2>
+                    Endless Runner
+                </h2>
+
+                <p>
+                    Run as far as you can.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- FLAPPY BIRD -->
+
+        <a class="game-card" href="flappy-bird.html">
+
+            <div>
+
+                <div class="icon">
+                    🐦
+                </div>
+
+                <h2>
+                    Flappy Bird
+                </h2>
+
+                <p>
+                    Fly through the pipes and beat your score.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- FRUIT SLICE -->
+
+        <a class="game-card" href="fruit-slice.html">
+
+            <div>
+
+                <div class="icon">
+                    🍉
+                </div>
+
+                <h2>
+                    Fruit Slice
+                </h2>
+
+                <p>
+                    Slice fruit and get the highest score.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- MAZE ESCAPE -->
+
+        <a class="game-card" href="maze-escape.html">
+
+            <div>
+
+                <div class="icon">
+                    🌀
+                </div>
+
+                <h2>
+                    Maze Escape
+                </h2>
+
+                <p>
+                    Find your way out of the maze.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- MINESWEEPER -->
+
+        <a class="game-card" href="minesweeper.html">
+
+            <div>
+
+                <div class="icon">
+                    💣
+                </div>
+
+                <h2>
+                    Minesweeper
+                </h2>
+
+                <p>
+                    Find the safe tiles and avoid mines.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- PENALTY -->
+
+        <a class="game-card" href="penalty.html">
+
+            <div>
+
+                <div class="icon">
+                    ⚽
+                </div>
+
+                <h2>
+                    Penalty
+                </h2>
+
+                <p>
+                    Take the perfect penalty shot.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- PONG -->
+
+        <a class="game-card" href="pong.html">
+
+            <div>
+
+                <div class="icon">
+                    🏓
+                </div>
+
+                <h2>
+                    Pong
+                </h2>
+
+                <p>
+                    Play classic Pong.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- RACING -->
+
+        <a class="game-card" href="racing.html">
+
+            <div>
+
+                <div class="icon">
+                    🏎️
+                </div>
+
+                <h2>
+                    Racing
+                </h2>
+
+                <p>
+                    Race and avoid obstacles.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- SNAKE -->
+
+        <a class="game-card" href="snake.html">
+
+            <div>
+
+                <div class="icon">
+                    🐍
+                </div>
+
+                <h2>
+                    Snake
+                </h2>
+
+                <p>
+                    Eat food, grow longer and beat your high score.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- TETRIS -->
+
+        <a class="game-card" href="tetris.html">
+
+            <div>
+
+                <div class="icon">
+                    🧩
+                </div>
+
+                <h2>
+                    Tetris
+                </h2>
+
+                <p>
+                    Stack blocks and clear lines.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- ULTIMATE CLICKER -->
+
+        <a class="game-card" href="ultimate-clicker.html">
+
+            <div>
+
+                <div class="icon">
+                    🖱️
+                </div>
+
+                <h2>
+                    Ultimate Clicker
+                </h2>
+
+                <p>
+                    Click, unlock upgrades and build the highest score.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- ZOMBIE -->
+
+        <a class="game-card" href="zombie.html">
+
+            <div>
+
+                <div class="icon">
+                    🧟
+                </div>
+
+                <h2>
+                    Zombie
+                </h2>
+
+                <p>
+                    Survive the zombie attack.
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- TIC TAC TOE -->
+
+        <a class="game-card" href="tic-tac-toe.html">
+
+            <div>
+
+                <div class="icon">
+                    ❌
+                </div>
+
+                <h2>
+                    Tic Tac Toe
+                </h2>
+
+                <p>
+                    Beat the computer!
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- MEMORY MATCH -->
+
+        <a class="game-card" href="memory-match.html">
+
+            <div>
+
+                <div class="icon">
+                    🧠
+                </div>
+
+                <h2>
+                    Memory Match
+                </h2>
+
+                <p>
+                    Match all the pairs!
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+
+        <!-- CONNECT FOUR -->
+
+        <a class="game-card" href="connect-four.html">
+
+            <div>
+
+                <div class="icon">
+                    🔴
+                </div>
+
+                <h2>
+                    Connect Four
+                </h2>
+
+                <p>
+                    Connect four to win!
+                </p>
+
+            </div>
+
+            <span class="play">
+                PLAY
+            </span>
+
+        </a>
+
+
+    </div>
+
+</main>
+
+
+
+<footer>
+
+    © 2026 UMINE Games
+
+</footer>
+
+
+</body>
+          </html>
